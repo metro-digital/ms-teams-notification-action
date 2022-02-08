@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {Context} from '@actions/github/lib/context'
-import {IncomingWebhook} from 'ms-teams-webhook'
+import {ContextPayload, PayloadHeader} from './types'
 import {
   changelogFact,
+  defaultPayload,
   factSection,
   headCommitFact,
   headCommitUrl,
@@ -13,11 +14,10 @@ import {
   senderFact,
   urlSection,
   workflowNameFact,
-  workflowRunUrl,
-  defaultPayload
+  workflowRunUrl
 } from './utils'
-
-import {ContextPayload, PayloadHeader} from './types'
+import {Context} from '@actions/github/lib/context'
+import {IncomingWebhook} from 'ms-teams-webhook'
 
 async function run(): Promise<void> {
   try {

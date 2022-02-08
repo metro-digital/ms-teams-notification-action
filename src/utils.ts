@@ -1,11 +1,12 @@
-import {Context} from '@actions/github/lib/context'
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  ContextPayload,
   NameUrl,
   NameValue,
-  Sections,
   PotentialAction,
-  ContextPayload
+  Sections
 } from './types'
+import {Context} from '@actions/github/lib/context'
 
 export const changelogFact = (ctx: Context): NameValue => {
   const commits = ctx.payload['commits']
