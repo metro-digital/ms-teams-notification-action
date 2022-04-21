@@ -63,7 +63,8 @@ function run() {
     });
 }
 const getContextPayload = (ctx) => {
-    if (ctx.eventName === 'pull_request' &&
+    if ((ctx.eventName === 'pull_request' ||
+        ctx.eventName === 'pull_request_target') &&
         (ctx.payload.action === 'opened' || ctx.payload.action === 'reopened')) {
         return Object.assign(Object.assign({ title: `Pull request ${ctx.payload.action}`, text: ctx.payload.pull_request.title }, (0, utils_1.factSection)([(0, utils_1.senderFact)(ctx), (0, utils_1.repositoryFact)(ctx)])), (0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.pullRequestUrl)(ctx)]));
     }
