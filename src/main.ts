@@ -55,7 +55,8 @@ async function run(): Promise<void> {
 
 const getContextPayload = (ctx: Context): ContextPayload => {
   if (
-    ctx.eventName === 'pull_request' &&
+    (ctx.eventName === 'pull_request' ||
+      ctx.eventName === 'pull_request_target') &&
     (ctx.payload.action === 'opened' || ctx.payload.action === 'reopened')
   ) {
     return {
