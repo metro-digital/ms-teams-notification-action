@@ -46,7 +46,11 @@ export const headCommitFact = (ctx: Context): NameValue => ({
 })
 
 export const repoUrl = (ctx: Context): NameUrl => {
-  if (!ctx.payload.repository || !ctx.payload.repository.html_url) {
+  if (
+    typeof ctx.payload.repository !== 'object' ||
+    ctx.payload.repository === null ||
+    typeof ctx.payload.repository.html_url !== 'string'
+  ) {
     throw new Error('Could not determine repoUrl')
   }
   return {
@@ -56,7 +60,11 @@ export const repoUrl = (ctx: Context): NameUrl => {
 }
 
 export const pullRequestUrl = (ctx: Context): NameUrl => {
-  if (!ctx.payload.pull_request || !ctx.payload.pull_request.html_url) {
+  if (
+    typeof ctx.payload.pull_request !== 'object' ||
+    ctx.payload.pull_request === null ||
+    typeof ctx.payload.pull_request.html_url !== 'string'
+  ) {
     throw new Error('Could not determine pullRequestUrl')
   }
 
