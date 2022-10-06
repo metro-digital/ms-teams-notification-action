@@ -55,28 +55,26 @@ async function run(): Promise<void> {
 }
 
 const getConfig = (): Config => {
-  const webhook_url = core.getInput('webhook_url')
-
-  const workflow_run_conclusion: ('success' | 'failure')[] = []
+  const result: Config = {
+    webhook_url: core.getInput('webhook_url'),
+    workflow_run_conclusion: []
+  }
 
   if (
     [false, 'false'].includes(core.getInput('workflow_run_success'))
       ? false
       : true
   ) {
-    workflow_run_conclusion.push('success')
+    result.workflow_run_conclusion.push('success')
   }
   if (
     [false, 'false'].includes(core.getInput('workflow_run_failure'))
       ? false
       : true
   ) {
-    workflow_run_conclusion.push('failure')
+    result.workflow_run_conclusion.push('failure')
   }
-  return {
-    webhook_url,
-    workflow_run_conclusion
-  }
+  return result
 }
 
 const getContextPayload = (ctx: Context, config: Config): ContextPayload => {
