@@ -99,7 +99,9 @@ const getContextPayload = (ctx: Context, config: Config): ContextPayload => {
 
   if (
     ctx.eventName === 'workflow_run' &&
-    config.workflow_run_conclusion.includes(ctx.payload['workflow_run'])
+    config.workflow_run_conclusion.includes(
+      ctx.payload['workflow_run'].conclusion
+    )
   ) {
     return {
       title: `Workflow ${ctx.payload['workflow_run'].conclusion}`,
