@@ -59,10 +59,18 @@ const getConfig = (): Config => {
 
   const workflow_run_conclusion: ('success' | 'failure')[] = []
 
-  if (core.getInput('workflow_run_success') ?? true) {
+  if (
+    [false, 'false'].includes(core.getInput('workflow_run_success'))
+      ? false
+      : true
+  ) {
     workflow_run_conclusion.push('success')
   }
-  if (core.getInput('workflow_run_failure') ?? true) {
+  if (
+    [false, 'false'].includes(core.getInput('workflow_run_failure'))
+      ? false
+      : true
+  ) {
     workflow_run_conclusion.push('failure')
   }
   return {
