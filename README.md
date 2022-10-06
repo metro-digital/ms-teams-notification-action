@@ -51,7 +51,7 @@ jobs:
         with:
           webhook_url: ${{ secrets.MSTEAMS_WEBHOOK_URL }}
           workflow_run_success: true # default is true
-          workflow_run_failure: false # default is true
+          workflow_run_failure: true # default is true
 ```
 
 ## License
