@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {ContextPayload, PayloadHeader} from './types'
+import {Config, ContextPayload, PayloadHeader} from './types'
 import {
   changelogFact,
   defaultPayload,
@@ -21,8 +21,9 @@ import {IncomingWebhook} from 'ms-teams-webhook'
 
 async function run(): Promise<void> {
   try {
-    const webhookUrl = core.getInput('webhook_url')
-    if (webhookUrl === '') {
+    const config = getConfig()
+
+    if (config.webhook_url === '') {
       throw new Error('[Error] Missing Microsoft Teams Incoming Webhooks URL.')
     }
 
@@ -32,10 +33,10 @@ async function run(): Promise<void> {
       '@type': 'MessageCard',
       themeColor: '0076D7',
       summary: ctx.eventName,
-      ...getContextPayload(ctx)
+      ...getContextPayload(ctx, getConfig())
     }
 
-    const client = new IncomingWebhook(webhookUrl)
+    const client = new IncomingWebhook(config.webhook_url)
     const response = await client.send(JSON.stringify(payload))
 
     if (!response?.text) {
@@ -53,7 +54,24 @@ async function run(): Promise<void> {
   }
 }
 
-const getContextPayload = (ctx: Context): ContextPayload => {
+const getConfig = (): Config => {
+  const webhook_url = core.getInput('webhook_url')
+
+  const workflow_run_conclusion: ('success' | 'failure')[] = []
+
+  if (core.getInput('workflow_run_success') ?? true) {
+    workflow_run_conclusion.push('success')
+  }
+  if (core.getInput('workflow_run_failure') ?? true) {
+    workflow_run_conclusion.push('failure')
+  }
+  return {
+    webhook_url,
+    workflow_run_conclusion
+  }
+}
+
+const getContextPayload = (ctx: Context, config: Config): ContextPayload => {
   if (
     (ctx.eventName === 'pull_request' ||
       ctx.eventName === 'pull_request_target') &&
@@ -81,8 +99,7 @@ const getContextPayload = (ctx: Context): ContextPayload => {
 
   if (
     ctx.eventName === 'workflow_run' &&
-    (ctx.payload['workflow_run'].conclusion === 'failure' ||
-      ctx.payload['workflow_run'].conclusion === 'success')
+    config.workflow_run_conclusion.includes(ctx.payload['workflow_run'])
   ) {
     return {
       title: `Workflow ${ctx.payload['workflow_run'].conclusion}`,
