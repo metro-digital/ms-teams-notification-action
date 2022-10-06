@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   ContextPayload,
   NameUrl,
@@ -46,15 +45,26 @@ export const headCommitFact = (ctx: Context): NameValue => ({
   value: ctx.payload['workflow_run'].head_commit.message
 })
 
-export const repoUrl = (ctx: Context): NameUrl => ({
-  name: 'Repository',
-  url: ctx.payload.repository!.html_url!
-})
+export const repoUrl = (ctx: Context): NameUrl => {
+  if (!ctx.payload.repository || !ctx.payload.repository.html_url) {
+    throw new Error('Could not determine repoUrl')
+  }
+  return {
+    name: 'Repository',
+    url: ctx.payload.repository.html_url
+  }
+}
 
-export const pullRequestUrl = (ctx: Context): NameUrl => ({
-  name: 'Pull Request',
-  url: ctx.payload.pull_request!.html_url!
-})
+export const pullRequestUrl = (ctx: Context): NameUrl => {
+  if (!ctx.payload.pull_request || !ctx.payload.pull_request.html_url) {
+    throw new Error('Could not determine pullRequestUrl')
+  }
+
+  return {
+    name: 'Pull Request',
+    url: ctx.payload.pull_request.html_url
+  }
+}
 
 export const workflowRunUrl = (ctx: Context): NameUrl => ({
   name: 'Workflow Run',
