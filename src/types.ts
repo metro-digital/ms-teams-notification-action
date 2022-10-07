@@ -21,3 +21,8 @@ export type PotentialAction = {
     targets: ActionTarget[]
   }[]
 }
+
+export type Config = {
+  webhook_url: string
+  workflow_run_conclusion: ('success' | 'failure')[]
+}
