@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {ContextPayload, PayloadHeader} from './types'
@@ -59,9 +58,11 @@ const getContextPayload = (ctx: Context): ContextPayload => {
       ctx.eventName === 'pull_request_target') &&
     (ctx.payload.action === 'opened' || ctx.payload.action === 'reopened')
   ) {
+    const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : ''
+
     return {
       title: `Pull request ${ctx.payload.action}`,
-      text: ctx.payload.pull_request!.title,
+      text,
       ...factSection([senderFact(ctx), repositoryFact(ctx)]),
       ...urlSection([repoUrl(ctx), pullRequestUrl(ctx)])
     }
