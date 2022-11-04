@@ -10,7 +10,8 @@
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
     "package": "ncc build --source-map --license licenses.txt",
-    "all": "npm run build && npm run format && npm run lint && npm run package "
+    "all": "npm run format && npm run lint && npm run package",
+    "integrity": "git diff --quiet ./dist"
   },
   "repository": {
     "type": "git",
@@ -24,18 +25,23 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
-    "@actions/github": "^5.0.0",
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
     "ms-teams-webhook": "^1.0.4"
   },
   "devDependencies": {
+    "@fastify/pre-commit": "^2.0.2",
     "@types/node": "^18.11.9",
-    "@typescript-eslint/eslint-plugin": "^5.11.0",
-    "@typescript-eslint/parser": "^5.11.0",
-    "@vercel/ncc": "^0.33.1",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "@vercel/ncc": "^0.34.0",
     "eslint": "^8.26.0",
-    "eslint-plugin-github": "^4.3.5",
-    "prettier": "2.5.1",
-    "typescript": "^4.4.4"
-  }
+    "eslint-plugin-github": "^4.4.1",
+    "prettier": "2.7.1",
+    "typescript": "^4.8.4"
+  },
+  "pre-commit": [
+    "all",
+    "integrity"
+  ]
 }
