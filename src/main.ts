@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {Config, ContextPayload, PayloadHeader} from './types'
+import type {Config, ContextPayload, PayloadHeader} from './types'
 import {
   changelogFact,
   defaultPayload,

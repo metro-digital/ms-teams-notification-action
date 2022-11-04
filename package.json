@@ -3,14 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Microsoft Teams notification action",
-  "main": "lib/main.js",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "ncc build --source-map --license licenses.txt src/main.ts",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "package": "ncc build --source-map --license licenses.txt",
-    "all": "npm run format && npm run lint && npm run package",
     "integrity": "git diff --quiet ./dist"
   },
   "repository": {
@@ -35,13 +33,16 @@
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "@vercel/ncc": "^0.34.0",
+    "esbuild": "^0.15.13",
     "eslint": "^8.26.0",
     "eslint-plugin-github": "^4.4.1",
     "prettier": "2.7.1",
     "typescript": "^4.8.4"
   },
   "pre-commit": [
-    "all",
+    "format-check",
+    "lint",
+    "build",
     "integrity"
   ]
 }

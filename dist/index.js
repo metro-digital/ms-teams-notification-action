@@ -1,252 +1,6 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 3109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
-const utils_1 = __nccwpck_require__(918);
-const ms_teams_webhook_1 = __nccwpck_require__(3386);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const config = getConfig();
-            if (config.webhook_url === '') {
-                throw new Error('[Error] Missing Microsoft Teams Incoming Webhooks URL.');
-            }
-            const ctx = github.context;
-            const payload = Object.assign({ '@context': 'http://schema.org/extensions', '@type': 'MessageCard', themeColor: '0076D7', summary: ctx.eventName }, getContextPayload(ctx, getConfig()));
-            const client = new ms_teams_webhook_1.IncomingWebhook(config.webhook_url);
-            const response = yield client.send(JSON.stringify(payload));
-            if (!(response === null || response === void 0 ? void 0 : response.text)) {
-                core.info(JSON.stringify(payload, null, 2));
-                throw new Error(`${'Failed to send notification to Microsoft Teams.\n Response:\n'}${JSON.stringify(response, null, 2)}`);
-            }
-        }
-        catch (err) {
-            if (err instanceof Error)
-                core.setFailed(err.message);
-        }
-    });
-}
-const getConfig = () => {
-    const result = {
-        webhook_url: core.getInput('webhook_url'),
-        workflow_run_conclusion: []
-    };
-    if ([false, 'false'].includes(core.getInput('workflow_run_success'))
-        ? false
-        : true) {
-        result.workflow_run_conclusion.push('success');
-    }
-    if ([false, 'false'].includes(core.getInput('workflow_run_failure'))
-        ? false
-        : true) {
-        result.workflow_run_conclusion.push('failure');
-    }
-    return result;
-};
-const getContextPayload = (ctx, config) => {
-    if ((ctx.eventName === 'pull_request' ||
-        ctx.eventName === 'pull_request_target') &&
-        (ctx.payload.action === 'opened' || ctx.payload.action === 'reopened')) {
-        const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : '';
-        return Object.assign(Object.assign({ title: `Pull request ${ctx.payload.action}`, text }, (0, utils_1.factSection)([(0, utils_1.senderFact)(ctx), (0, utils_1.repositoryFact)(ctx)])), (0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.pullRequestUrl)(ctx)]));
-    }
-    if (ctx.eventName === 'push') {
-        return Object.assign(Object.assign({ title: `Push to ${ctx.ref}` }, (0, utils_1.factSection)([
-            (0, utils_1.senderFact)(ctx),
-            (0, utils_1.repositoryFact)(ctx),
-            (0, utils_1.changelogFact)(ctx)
-        ])), (0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.headCommitUrl)(ctx)]));
-    }
-    if (ctx.eventName === 'workflow_run' &&
-        config.workflow_run_conclusion.includes(ctx.payload['workflow_run'].conclusion)) {
-        return Object.assign(Object.assign({ title: `Workflow ${ctx.payload['workflow_run'].conclusion}`, themeColor: ctx.payload['workflow_run'].conclusion === 'failure'
-                ? 'FF0000'
-                : '00FF00' }, (0, utils_1.factSection)([
-            (0, utils_1.senderFact)(ctx),
-            (0, utils_1.repositoryFact)(ctx),
-            (0, utils_1.workflowNameFact)(ctx),
-            (0, utils_1.headCommitFact)(ctx)
-        ])), (0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.workflowRunUrl)(ctx)]));
-    }
-    core.info(JSON.stringify(ctx, null, 2));
-    return (0, utils_1.defaultPayload)(ctx);
-};
-run();
-
-
-/***/ }),
-
-/***/ 918:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.defaultPayload = exports.urlSection = exports.factSection = exports.headCommitUrl = exports.workflowRunUrl = exports.pullRequestUrl = exports.repoUrl = exports.headCommitFact = exports.workflowNameFact = exports.repositoryFact = exports.senderFact = exports.changelogFact = void 0;
-const changelogFact = (ctx) => {
-    const commits = ctx.payload['commits'];
-    if (commits && commits.length > 1) {
-        return {
-            name: 'Changelog',
-            value: commits.map((c) => `- ${c.message}`).join('\n')
-        };
-    }
-    if (commits && commits.length === 1) {
-        return {
-            name: 'Commit',
-            value: commits[0].message
-        };
-    }
-    return { name: 'Changes', value: '' };
-};
-exports.changelogFact = changelogFact;
-const senderFact = (ctx) => ({
-    name: 'By',
-    value: ctx.actor
-});
-exports.senderFact = senderFact;
-const repositoryFact = (ctx) => ({
-    name: 'Repository',
-    value: ctx.repo.repo
-});
-exports.repositoryFact = repositoryFact;
-const workflowNameFact = (ctx) => ({
-    name: 'Workflow name',
-    value: ctx.payload['workflow'].name
-});
-exports.workflowNameFact = workflowNameFact;
-const headCommitFact = (ctx) => ({
-    name: 'Head commit',
-    value: ctx.payload['workflow_run'].head_commit.message
-});
-exports.headCommitFact = headCommitFact;
-const repoUrl = (ctx) => {
-    if (typeof ctx.payload.repository !== 'object' ||
-        ctx.payload.repository === null ||
-        typeof ctx.payload.repository.html_url !== 'string') {
-        throw new Error('Could not determine repoUrl');
-    }
-    return {
-        name: 'Repository',
-        url: ctx.payload.repository.html_url
-    };
-};
-exports.repoUrl = repoUrl;
-const pullRequestUrl = (ctx) => {
-    if (typeof ctx.payload.pull_request !== 'object' ||
-        ctx.payload.pull_request === null ||
-        typeof ctx.payload.pull_request.html_url !== 'string') {
-        throw new Error('Could not determine pullRequestUrl');
-    }
-    return {
-        name: 'Pull Request',
-        url: ctx.payload.pull_request.html_url
-    };
-};
-exports.pullRequestUrl = pullRequestUrl;
-const workflowRunUrl = (ctx) => ({
-    name: 'Workflow Run',
-    url: ctx.payload['workflow_run'].html_url
-});
-exports.workflowRunUrl = workflowRunUrl;
-const headCommitUrl = (ctx) => ({
-    name: 'Head Commit',
-    url: ctx.payload['head_commit'].url
-});
-exports.headCommitUrl = headCommitUrl;
-const factSection = (facts) => ({
-    sections: [
-        {
-            facts
-        }
-    ]
-});
-exports.factSection = factSection;
-const urlSection = (values) => ({
-    potentialAction: values.map(({ name, url }) => ({
-        '@type': 'OpenUri',
-        name,
-        targets: [
-            {
-                os: 'default',
-                uri: url
-            }
-        ]
-    }))
-});
-exports.urlSection = urlSection;
-const defaultPayload = (ctx) => {
-    var _a;
-    let payload = {
-        title: 'unknown action',
-        text: `event: ${ctx.eventName}`
-    };
-    const urls = [];
-    if ((_a = ctx.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url) {
-        urls.push((0, exports.repoUrl)(ctx));
-    }
-    if (ctx.payload['workflow_run'].html_url) {
-        urls.push((0, exports.workflowRunUrl)(ctx));
-    }
-    const facts = [];
-    if (ctx.actor) {
-        facts.push((0, exports.senderFact)(ctx));
-    }
-    if (ctx.repo.repo) {
-        facts.push((0, exports.repositoryFact)(ctx));
-    }
-    if (urls.length > 0) {
-        payload = Object.assign(Object.assign({}, payload), (0, exports.urlSection)(urls));
-    }
-    if (facts.length > 0) {
-        payload = Object.assign(Object.assign({}, payload), (0, exports.factSection)(facts));
-    }
-    return payload;
-};
-exports.defaultPayload = defaultPayload;
-
-
-/***/ }),
-
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -13829,6 +13583,260 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 399:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+const utils_1 = __nccwpck_require__(1314);
+const ms_teams_webhook_1 = __nccwpck_require__(3386);
+async function run() {
+    try {
+        const config = getConfig();
+        if (config.webhook_url === '') {
+            throw new Error('[Error] Missing Microsoft Teams Incoming Webhooks URL.');
+        }
+        const ctx = github.context;
+        const payload = {
+            '@context': 'http://schema.org/extensions',
+            '@type': 'MessageCard',
+            themeColor: '0076D7',
+            summary: ctx.eventName,
+            ...getContextPayload(ctx, getConfig())
+        };
+        const client = new ms_teams_webhook_1.IncomingWebhook(config.webhook_url);
+        const response = await client.send(JSON.stringify(payload));
+        if (!response?.text) {
+            core.info(JSON.stringify(payload, null, 2));
+            throw new Error(`${'Failed to send notification to Microsoft Teams.\n Response:\n'}${JSON.stringify(response, null, 2)}`);
+        }
+    }
+    catch (err) {
+        if (err instanceof Error)
+            core.setFailed(err.message);
+    }
+}
+const getConfig = () => {
+    const result = {
+        webhook_url: core.getInput('webhook_url'),
+        workflow_run_conclusion: []
+    };
+    if ([false, 'false'].includes(core.getInput('workflow_run_success'))
+        ? false
+        : true) {
+        result.workflow_run_conclusion.push('success');
+    }
+    if ([false, 'false'].includes(core.getInput('workflow_run_failure'))
+        ? false
+        : true) {
+        result.workflow_run_conclusion.push('failure');
+    }
+    return result;
+};
+const getContextPayload = (ctx, config) => {
+    if ((ctx.eventName === 'pull_request' ||
+        ctx.eventName === 'pull_request_target') &&
+        (ctx.payload.action === 'opened' || ctx.payload.action === 'reopened')) {
+        const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : '';
+        return {
+            title: `Pull request ${ctx.payload.action}`,
+            text,
+            ...(0, utils_1.factSection)([(0, utils_1.senderFact)(ctx), (0, utils_1.repositoryFact)(ctx)]),
+            ...(0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.pullRequestUrl)(ctx)])
+        };
+    }
+    if (ctx.eventName === 'push') {
+        return {
+            title: `Push to ${ctx.ref}`,
+            ...(0, utils_1.factSection)([
+                (0, utils_1.senderFact)(ctx),
+                (0, utils_1.repositoryFact)(ctx),
+                (0, utils_1.changelogFact)(ctx)
+            ]),
+            ...(0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.headCommitUrl)(ctx)])
+        };
+    }
+    if (ctx.eventName === 'workflow_run' &&
+        config.workflow_run_conclusion.includes(ctx.payload['workflow_run'].conclusion)) {
+        return {
+            title: `Workflow ${ctx.payload['workflow_run'].conclusion}`,
+            themeColor: ctx.payload['workflow_run'].conclusion === 'failure'
+                ? 'FF0000'
+                : '00FF00',
+            ...(0, utils_1.factSection)([
+                (0, utils_1.senderFact)(ctx),
+                (0, utils_1.repositoryFact)(ctx),
+                (0, utils_1.workflowNameFact)(ctx),
+                (0, utils_1.headCommitFact)(ctx)
+            ]),
+            ...(0, utils_1.urlSection)([(0, utils_1.repoUrl)(ctx), (0, utils_1.workflowRunUrl)(ctx)])
+        };
+    }
+    core.info(JSON.stringify(ctx, null, 2));
+    return (0, utils_1.defaultPayload)(ctx);
+};
+run();
+
+
+/***/ }),
+
+/***/ 1314:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.defaultPayload = exports.urlSection = exports.factSection = exports.headCommitUrl = exports.workflowRunUrl = exports.pullRequestUrl = exports.repoUrl = exports.headCommitFact = exports.workflowNameFact = exports.repositoryFact = exports.senderFact = exports.changelogFact = void 0;
+const changelogFact = (ctx) => {
+    const commits = ctx.payload['commits'];
+    if (commits && commits.length > 1) {
+        return {
+            name: 'Changelog',
+            value: commits.map((c) => `- ${c.message}`).join('\n')
+        };
+    }
+    if (commits && commits.length === 1) {
+        return {
+            name: 'Commit',
+            value: commits[0].message
+        };
+    }
+    return { name: 'Changes', value: '' };
+};
+exports.changelogFact = changelogFact;
+const senderFact = (ctx) => ({
+    name: 'By',
+    value: ctx.actor
+});
+exports.senderFact = senderFact;
+const repositoryFact = (ctx) => ({
+    name: 'Repository',
+    value: ctx.repo.repo
+});
+exports.repositoryFact = repositoryFact;
+const workflowNameFact = (ctx) => ({
+    name: 'Workflow name',
+    value: ctx.payload['workflow'].name
+});
+exports.workflowNameFact = workflowNameFact;
+const headCommitFact = (ctx) => ({
+    name: 'Head commit',
+    value: ctx.payload['workflow_run'].head_commit.message
+});
+exports.headCommitFact = headCommitFact;
+const repoUrl = (ctx) => {
+    if (typeof ctx.payload.repository !== 'object' ||
+        ctx.payload.repository === null ||
+        typeof ctx.payload.repository.html_url !== 'string') {
+        throw new Error('Could not determine repoUrl');
+    }
+    return {
+        name: 'Repository',
+        url: ctx.payload.repository.html_url
+    };
+};
+exports.repoUrl = repoUrl;
+const pullRequestUrl = (ctx) => {
+    if (typeof ctx.payload.pull_request !== 'object' ||
+        ctx.payload.pull_request === null ||
+        typeof ctx.payload.pull_request.html_url !== 'string') {
+        throw new Error('Could not determine pullRequestUrl');
+    }
+    return {
+        name: 'Pull Request',
+        url: ctx.payload.pull_request.html_url
+    };
+};
+exports.pullRequestUrl = pullRequestUrl;
+const workflowRunUrl = (ctx) => ({
+    name: 'Workflow Run',
+    url: ctx.payload['workflow_run'].html_url
+});
+exports.workflowRunUrl = workflowRunUrl;
+const headCommitUrl = (ctx) => ({
+    name: 'Head Commit',
+    url: ctx.payload['head_commit'].url
+});
+exports.headCommitUrl = headCommitUrl;
+const factSection = (facts) => ({
+    sections: [
+        {
+            facts
+        }
+    ]
+});
+exports.factSection = factSection;
+const urlSection = (values) => ({
+    potentialAction: values.map(({ name, url }) => ({
+        '@type': 'OpenUri',
+        name,
+        targets: [
+            {
+                os: 'default',
+                uri: url
+            }
+        ]
+    }))
+});
+exports.urlSection = urlSection;
+const defaultPayload = (ctx) => {
+    let payload = {
+        title: 'unknown action',
+        text: `event: ${ctx.eventName}`
+    };
+    const urls = [];
+    if (ctx.payload.repository?.html_url) {
+        urls.push((0, exports.repoUrl)(ctx));
+    }
+    if (ctx.payload['workflow_run'].html_url) {
+        urls.push((0, exports.workflowRunUrl)(ctx));
+    }
+    const facts = [];
+    if (ctx.actor) {
+        facts.push((0, exports.senderFact)(ctx));
+    }
+    if (ctx.repo.repo) {
+        facts.push((0, exports.repositoryFact)(ctx));
+    }
+    if (urls.length > 0) {
+        payload = { ...payload, ...(0, exports.urlSection)(urls) };
+    }
+    if (facts.length > 0) {
+        payload = { ...payload, ...(0, exports.factSection)(facts) };
+    }
+    return payload;
+};
+exports.defaultPayload = defaultPayload;
+
+
+/***/ }),
+
 /***/ 2877:
 /***/ ((module) => {
 
@@ -14023,7 +14031,7 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(3109);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(399);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
