@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send pull requests to Microsoft Teams
-        uses: metro-digital/ms-teams-notification-action@v1.0.2
+        uses: metro-digital/ms-teams-notification-action@v1.0.3
         with:
           webhook_url: ${{ secrets.MSTEAMS_WEBHOOK_URL }}
           workflow_run_success: true # default is true

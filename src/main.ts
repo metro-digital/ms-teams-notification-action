@@ -36,7 +36,7 @@ async function run(): Promise<void> {
     }
 
     const client = new IncomingWebhook(config.webhook_url)
-    const response = await client.send(JSON.stringify(payload))
+    const response = await client.send(payload)
 
     if (!response?.text) {
       core.info(JSON.stringify(payload, null, 2))
