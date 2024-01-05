@@ -1,7 +1,7 @@
-name: 'build-test'
+name: CI
 on: # rebuild any PRs and main branch changes
   pull_request:
-    types: [opened]
+    types: [opened, reopened]
   push:
     branches:
       - main
@@ -11,15 +11,27 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - run: |
-          npm install
+          npm ci
       - run: |
-          npm run all
+          npm run lint
+      - run: |
+          npm run build
+      - name: Integrity Check
+        run: |
+          git diff --quiet dist
   notify: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
+    needs: build
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Send pull requests to Microsoft Teams
         uses: ./
         with:
