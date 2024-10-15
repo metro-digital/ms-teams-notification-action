@@ -118,7 +118,7 @@ export const defaultPayload = (ctx: Context): ContextPayload => {
     urls.push(repoUrl(ctx));
   }
 
-  if (ctx.payload["workflow_run"].html_url) {
+  if (ctx.payload["workflow_run"]?.html_url) {
     urls.push(workflowRunUrl(ctx));
   }
 
