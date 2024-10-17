@@ -6,7 +6,6 @@ export const getConfig = (): Config => {
     webhook_url: getInput("webhook_url"),
     workflow_conclusion: getInput("conclusion"),
   };
-
   if (result.workflow_conclusion === "") {
     result.workflow_conclusion = "unknown";
   }
