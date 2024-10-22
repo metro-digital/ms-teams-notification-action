@@ -1,16 +1,12 @@
 import { info, setFailed } from "@actions/core";
 import { context } from "@actions/github";
-import { getConfig } from "./utils";
+import { readInputs } from "./utils";
 import { WebhookForAdaptiveCardPayload } from "./webhookForAdaptiveCardPayload";
 
 async function run(): Promise<void> {
   try {
-    const config = getConfig();
-    if (config.webhook_url === "") {
-      throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
-    }
-
-    const webhook = new WebhookForAdaptiveCardPayload(config.webhook_url);
+    const inputs = readInputs();
+    const webhook = new WebhookForAdaptiveCardPayload(inputs.webhook_url);
     const payload = webhook.preparePayload(context);
     const response = await webhook.send(payload);
     if (!response?.text) {

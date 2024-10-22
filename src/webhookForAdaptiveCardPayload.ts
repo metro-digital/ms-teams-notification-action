@@ -1,7 +1,7 @@
 import { MS_TEAMS_WEBHOOK } from "./webhook";
 import { Context } from "@actions/github/lib/context";
 import { AdaptiveCardElement, Config, Payload } from "./types";
-import { getConfig } from "./utils";
+import { readInputs } from "./utils";
 
 export class WebhookForAdaptiveCardPayload implements MS_TEAMS_WEBHOOK {
   url: string;
@@ -15,7 +15,7 @@ export class WebhookForAdaptiveCardPayload implements MS_TEAMS_WEBHOOK {
     const eventName = ctx.eventName;
     const workflowName = ctx.workflow;
     const repositoryLink = `[${ctx.payload.repository?.full_name}](${ctx.payload.repository?.html_url})`;
-    const statusMessage = getWorkflowStatusMessage(getConfig());
+    const statusMessage = getWorkflowStatusMessage(readInputs());
     return {
       type: "message",
       attachments: [

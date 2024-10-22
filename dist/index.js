@@ -23043,11 +23043,14 @@ var import_github = __toESM(require_github());
 
 // src/utils.ts
 var import_core = __toESM(require_core());
-var getConfig = () => {
+var readInputs = () => {
   const result = {
     webhook_url: (0, import_core.getInput)("webhook_url"),
     workflow_conclusion: (0, import_core.getInput)("conclusion")
   };
+  if (result.webhook_url === "") {
+    throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
+  }
   if (result.workflow_conclusion === "") {
     result.workflow_conclusion = "unknown";
   }
@@ -23064,7 +23067,7 @@ var WebhookForAdaptiveCardPayload = class {
     const eventName = ctx.eventName;
     const workflowName = ctx.workflow;
     const repositoryLink = `[${ctx.payload.repository?.full_name}](${ctx.payload.repository?.html_url})`;
-    const statusMessage = getWorkflowStatusMessage(getConfig());
+    const statusMessage = getWorkflowStatusMessage(readInputs());
     return {
       type: "message",
       attachments: [
@@ -23167,11 +23170,8 @@ function getStatusMessageWith(status, iconURL) {
 // src/index.ts
 async function run() {
   try {
-    const config = getConfig();
-    if (config.webhook_url === "") {
-      throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
-    }
-    const webhook = new WebhookForAdaptiveCardPayload(config.webhook_url);
+    const inputs = readInputs();
+    const webhook = new WebhookForAdaptiveCardPayload(inputs.webhook_url);
     const payload = webhook.preparePayload(import_github.context);
     const response = await webhook.send(payload);
     if (!response?.text) {
