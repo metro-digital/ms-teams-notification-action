@@ -23063,7 +23063,7 @@ var WebhookForAdaptiveCardPayload = class {
     this.url = url;
   }
   preparePayload(ctx) {
-    const name = ctx.payload.sender?.login;
+    const workflowTrigger = ctx.payload.sender?.login ? `${ctx.payload.sender?.login} triggered` : "Triggered";
     const eventName = ctx.eventName;
     const workflowName = ctx.workflow;
     const repositoryLink = `[${ctx.payload.repository?.full_name}](${ctx.payload.repository?.html_url})`;
@@ -23080,7 +23080,7 @@ var WebhookForAdaptiveCardPayload = class {
                 type: "TextBlock",
                 size: "Medium",
                 weight: "Bolder",
-                text: `${name} triggered ${workflowName} via ${eventName}`,
+                text: `${workflowTrigger} ${workflowName} via ${eventName}`,
                 style: "heading",
                 wrap: true
               },

@@ -11,7 +11,7 @@ export class WebhookForAdaptiveCardPayload implements MS_TEAMS_WEBHOOK {
   }
 
   preparePayload(ctx: Context): Payload {
-    const name = ctx.payload.sender?.login;
+    const workflowTrigger = ctx.payload.sender?.login? `${ctx.payload.sender?.login} triggered` : "Triggered";
     const eventName = ctx.eventName;
     const workflowName = ctx.workflow;
     const repositoryLink = `[${ctx.payload.repository?.full_name}](${ctx.payload.repository?.html_url})`;
@@ -28,7 +28,7 @@ export class WebhookForAdaptiveCardPayload implements MS_TEAMS_WEBHOOK {
                 type: "TextBlock",
                 size: "Medium",
                 weight: "Bolder",
-                text: `${name} triggered ${workflowName} via ${eventName}`,
+                text: `${workflowTrigger} ${workflowName} via ${eventName}`,
                 style: "heading",
                 wrap: true,
               },
@@ -55,7 +55,6 @@ export class WebhookForAdaptiveCardPayload implements MS_TEAMS_WEBHOOK {
       ],
     };
   }
-
   async send(payload: Payload): Promise<Response> {
     return fetch(this.url, {
       body: JSON.stringify(payload),
