@@ -36,3 +36,4 @@ jobs:
         uses: ./
         with:
           webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
+          conclusion: ${{ github.workflow.conclusion }}

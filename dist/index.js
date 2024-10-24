@@ -23038,138 +23038,144 @@ var require_github = __commonJS({
 });
 
 // src/index.ts
-var import_core = __toESM(require_core());
+var import_core2 = __toESM(require_core());
 var import_github = __toESM(require_github());
 
 // src/utils.ts
-var changelogFact = (ctx) => {
-  const commits = ctx.payload["commits"];
-  if (commits && commits.length > 1) {
-    return {
-      name: "Changelog",
-      value: commits.map((c) => `- ${c.message}`).join("\n")
-    };
-  }
-  if (commits && commits.length === 1) {
-    return {
-      name: "Commit",
-      value: commits[0].message
-    };
-  }
-  return { name: "Changes", value: "" };
-};
-var senderFact = (ctx) => ({
-  name: "By",
-  value: ctx.actor
-});
-var repositoryFact = (ctx) => ({
-  name: "Repository",
-  value: ctx.repo.repo
-});
-var workflowNameFact = (ctx) => ({
-  name: "Workflow name",
-  value: ctx.payload["workflow"].name
-});
-var headCommitFact = (ctx) => ({
-  name: "Head commit",
-  value: ctx.payload["workflow_run"].head_commit.message
-});
-var repoUrl = (ctx) => {
-  if (typeof ctx.payload.repository !== "object" || ctx.payload.repository === null || typeof ctx.payload.repository.html_url !== "string") {
-    throw new Error("Could not determine repoUrl");
-  }
-  return {
-    name: "Repository",
-    url: ctx.payload.repository.html_url
+var import_core = __toESM(require_core());
+var readInputs = () => {
+  const result = {
+    webhook_url: (0, import_core.getInput)("webhook_url"),
+    workflow_conclusion: (0, import_core.getInput)("conclusion")
   };
-};
-var pullRequestUrl = (ctx) => {
-  if (typeof ctx.payload.pull_request !== "object" || ctx.payload.pull_request === null || typeof ctx.payload.pull_request.html_url !== "string") {
-    throw new Error("Could not determine pullRequestUrl");
+  if (result.webhook_url === "") {
+    throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
   }
-  return {
-    name: "Pull Request",
-    url: ctx.payload.pull_request.html_url
-  };
-};
-var workflowRunUrl = (ctx) => ({
-  name: "Workflow Run",
-  url: ctx.payload["workflow_run"].html_url
-});
-var headCommitUrl = (ctx) => ({
-  name: "Head Commit",
-  url: ctx.payload["head_commit"].url
-});
-var factSection = (facts) => ({
-  sections: [
-    {
-      facts
-    }
-  ]
-});
-var urlSection = (values) => ({
-  potentialAction: values.map(({ name, url }) => ({
-    "@type": "OpenUri",
-    name,
-    targets: [
-      {
-        os: "default",
-        uri: url
-      }
-    ]
-  }))
-});
-var defaultPayload = (ctx) => {
-  let payload = {
-    title: "unknown action",
-    text: `event: ${ctx.eventName}`
-  };
-  const urls = [];
-  if (ctx.payload.repository?.html_url) {
-    urls.push(repoUrl(ctx));
+  if (result.workflow_conclusion === "") {
+    result.workflow_conclusion = "unknown";
   }
-  if (ctx.payload["workflow_run"]?.html_url) {
-    urls.push(workflowRunUrl(ctx));
-  }
-  const facts = [];
-  if (ctx.actor) {
-    facts.push(senderFact(ctx));
-  }
-  if (ctx.repo.repo) {
-    facts.push(repositoryFact(ctx));
-  }
-  if (urls.length > 0) {
-    payload = { ...payload, ...urlSection(urls) };
-  }
-  if (facts.length > 0) {
-    payload = { ...payload, ...factSection(facts) };
-  }
-  return payload;
+  return result;
 };
 
-// src/index.ts
-async function run() {
-  try {
-    const config = getConfig();
-    if (config.webhook_url === "") {
-      throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
-    }
-    const ctx = import_github.context;
-    const payload = {
-      "@context": "http://schema.org/extensions",
-      "@type": "MessageCard",
-      themeColor: "0076D7",
-      summary: ctx.eventName,
-      ...getContextPayload(ctx, getConfig())
+// src/webhookForAdaptiveCardPayload.ts
+var WebhookForAdaptiveCardPayload = class {
+  constructor(url) {
+    this.url = url;
+  }
+  preparePayload(ctx) {
+    const workflowTrigger = ctx.payload.sender?.login ? `${ctx.payload.sender?.login} triggered` : "Triggered";
+    const eventName = ctx.eventName;
+    const workflowName = ctx.workflow;
+    const repositoryLink = `[${ctx.payload.repository?.full_name}](${ctx.payload.repository?.html_url})`;
+    const statusMessage = getWorkflowStatusMessage(readInputs());
+    return {
+      type: "message",
+      attachments: [
+        {
+          contentType: "application/vnd.microsoft.card.adaptive",
+          content: {
+            type: "AdaptiveCard",
+            body: [
+              {
+                type: "TextBlock",
+                size: "Medium",
+                weight: "Bolder",
+                text: `${workflowTrigger} ${workflowName} via ${eventName}`,
+                style: "heading",
+                wrap: true
+              },
+              {
+                type: "TextBlock",
+                size: "Medium",
+                weight: "lighter",
+                text: repositoryLink
+              },
+              statusMessage,
+              {
+                type: "ActionSet",
+                actions: [
+                  {
+                    type: "Action.OpenUrl",
+                    title: "Repository",
+                    url: ctx.payload.repository?.html_url
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     };
-    const response = await fetch(config.webhook_url, {
+  }
+  async send(payload) {
+    return fetch(this.url, {
       body: JSON.stringify(payload),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       redirect: "manual"
     });
+  }
+};
+function getWorkflowStatusMessage(config) {
+  const conclusion = config.workflow_conclusion;
+  if (conclusion === "success") {
+    return getStatusMessageWith(
+      "Success!",
+      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/check.png"
+    );
+  } else if (conclusion === "failure") {
+    return getStatusMessageWith(
+      "Failed!",
+      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/fail.png"
+    );
+  } else {
+    return getStatusMessageWith(
+      "Unknown/Cancelled/Skipped",
+      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/unknown.png"
+    );
+  }
+}
+function getStatusMessageWith(status, iconURL) {
+  return {
+    type: "ColumnSet",
+    columns: [
+      {
+        type: "Column",
+        items: [
+          {
+            type: "Image",
+            style: "person",
+            url: iconURL,
+            altText: "Result",
+            size: "small"
+          }
+        ],
+        width: "auto"
+      },
+      {
+        type: "Column",
+        items: [
+          {
+            type: "TextBlock",
+            weight: "bolder",
+            text: status
+          }
+        ],
+        width: "stretch"
+      }
+    ]
+  };
+}
+
+// src/index.ts
+async function run() {
+  try {
+    const inputs = readInputs();
+    const webhook = new WebhookForAdaptiveCardPayload(inputs.webhook_url);
+    const payload = webhook.preparePayload(import_github.context);
+    const response = await webhook.send(payload);
     if (!response?.text) {
-      (0, import_core.info)(JSON.stringify(payload, null, 2));
+      (0, import_core2.info)(JSON.stringify(payload, null, 2));
       throw new Error(
         `${"Failed to send notification to Microsoft Teams.\n Response:\n"}${JSON.stringify(
           response,
@@ -23180,61 +23186,9 @@ async function run() {
     }
   } catch (err) {
     if (err instanceof Error)
-      (0, import_core.setFailed)(err.message);
+      (0, import_core2.setFailed)(err.message);
   }
 }
-var getConfig = () => {
-  const result = {
-    webhook_url: (0, import_core.getInput)("webhook_url"),
-    workflow_run_conclusion: []
-  };
-  if ([false, "false"].includes((0, import_core.getInput)("workflow_run_success")) ? false : true) {
-    result.workflow_run_conclusion.push("success");
-  }
-  if ([false, "false"].includes((0, import_core.getInput)("workflow_run_failure")) ? false : true) {
-    result.workflow_run_conclusion.push("failure");
-  }
-  return result;
-};
-var getContextPayload = (ctx, config) => {
-  if ((ctx.eventName === "pull_request" || ctx.eventName === "pull_request_target") && (ctx.payload.action === "opened" || ctx.payload.action === "reopened")) {
-    const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : "";
-    return {
-      title: `Pull request ${ctx.payload.action}`,
-      text,
-      ...factSection([senderFact(ctx), repositoryFact(ctx)]),
-      ...urlSection([repoUrl(ctx), pullRequestUrl(ctx)])
-    };
-  }
-  if (ctx.eventName === "push") {
-    return {
-      title: `Push to ${ctx.ref}`,
-      ...factSection([
-        senderFact(ctx),
-        repositoryFact(ctx),
-        changelogFact(ctx)
-      ]),
-      ...urlSection([repoUrl(ctx), headCommitUrl(ctx)])
-    };
-  }
-  if (ctx.eventName === "workflow_run" && config.workflow_run_conclusion.includes(
-    ctx.payload["workflow_run"].conclusion
-  )) {
-    return {
-      title: `Workflow ${ctx.payload["workflow_run"].conclusion}`,
-      themeColor: ctx.payload["workflow_run"].conclusion === "failure" ? "FF0000" : "00FF00",
-      ...factSection([
-        senderFact(ctx),
-        repositoryFact(ctx),
-        workflowNameFact(ctx),
-        headCommitFact(ctx)
-      ]),
-      ...urlSection([repoUrl(ctx), workflowRunUrl(ctx)])
-    };
-  }
-  (0, import_core.info)(JSON.stringify(ctx, null, 2));
-  return defaultPayload(ctx);
-};
 run();
 /*! Bundled license information:
 
