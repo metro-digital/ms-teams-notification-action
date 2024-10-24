@@ -6,18 +6,18 @@
 # MS Teams Notification Action
 
 A GitHub action that sends notifications to MS Teams on events specified in the
-workflow. 
+workflow.
 
-Supported events: 
+Supported events:
   ```
-  pull_request 
+  pull_request
     types: [opened, reopened]
-  ```    
+  ```
   ```
   push
     branches: []
   ```
-  
+
   ```
   workflow_run
     types: [completed]
@@ -25,7 +25,7 @@ Supported events:
   (The notification will be sent by default on both: success and failure conclusions.)
   ```
 
-You can set the options workflow_run_success and workflow_run_failure to false to disable the notification. E.g. if you want to only get notifications on failures, set workflow_run_success to false. 
+You can set the options workflow_run_success and workflow_run_failure to false to disable the notification. E.g. if you want to only get notifications on failures, set workflow_run_success to false.
 
 All of the supported events can be configured in a single workflow.
 
@@ -53,6 +53,8 @@ jobs:
           workflow_run_success: true # default is true
           workflow_run_failure: true # default is true
 ```
+
+> **_NOTE:_**  The version v1.x.x supports only Incoming webhooks which is deprecated. [Link for the deprecation notice.](https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/) For sending notifications via workflows with and AdaptiveCard use v2.x.x. [For documentation, please click here.](https://github.com/metro-digital/ms-teams-notification-action/tree/v2)
 
 ## License
 
