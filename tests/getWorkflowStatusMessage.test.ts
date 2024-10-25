@@ -12,7 +12,7 @@ test('When the conclusion passed to the action is success', () => {
           {
             type: "Image",
             style: "person",
-            url: "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/check.png",
+            url: "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/v2/images/check.png",
             altText: "Result",
             size: "small",
           },
@@ -47,7 +47,7 @@ test('When the conclusion passed to the action is failure', () => {
           {
             type: "Image",
             style: "person",
-            url: "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/fail.png",
+            url: "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/v2/images/fail.png",
             altText: "Result",
             size: "small",
           },
@@ -82,7 +82,7 @@ test('When the conclusion passed to the action is anything other than success/fa
           {
             type: "Image",
             style: "person",
-            url: "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/unknown.png",
+            url: "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/v2/images/unknown.png",
             altText: "Result",
             size: "small",
           },

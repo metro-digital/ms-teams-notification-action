@@ -23121,17 +23121,17 @@ function getWorkflowStatusMessage(config) {
   if (conclusion === "success") {
     return getStatusMessageWith(
       "Success!",
-      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/check.png"
+      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/v2/images/check.png"
     );
   } else if (conclusion === "failure") {
     return getStatusMessageWith(
       "Failed!",
-      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/fail.png"
+      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/v2/images/fail.png"
     );
   } else {
     return getStatusMessageWith(
       "Unknown/Cancelled/Skipped",
-      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/send_notification_using_workflows_also/images/unknown.png"
+      "https://raw.githubusercontent.com/metro-digital/ms-teams-notification-action/v2/images/unknown.png"
     );
   }
 }
