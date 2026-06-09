@@ -1,26 +1,49 @@
-export type PayloadHeader = { "@context": string; "@type": string };
-export type ContextPayload = {
+export type AdaptiveCardFact = { title: string; value: string };
+
+export type AdaptiveCardTextBlock = {
+  type: "TextBlock";
+  text: string;
+  weight?: "Bolder" | "Default" | "Lighter";
+  size?: "Small" | "Default" | "Medium" | "Large" | "ExtraLarge";
+  color?: "Default" | "Dark" | "Light" | "Accent" | "Good" | "Warning" | "Attention";
+  wrap?: boolean;
+};
+
+export type AdaptiveCardFactSet = {
+  type: "FactSet";
+  facts: AdaptiveCardFact[];
+};
+
+export type AdaptiveCardBodyItem = AdaptiveCardTextBlock | AdaptiveCardFactSet;
+
+export type AdaptiveCardAction = {
+  type: "Action.OpenUrl";
   title: string;
-  text?: string;
-  summary?: string;
-  themeColor?: string;
-} & PotentialAction &
-  Sections;
+  url: string;
+};
+
+export type AdaptiveCard = {
+  $schema: string;
+  type: "AdaptiveCard";
+  version: string;
+  body: AdaptiveCardBodyItem[];
+  actions?: AdaptiveCardAction[];
+};
+
+export type AdaptiveCardAttachment = {
+  contentType: "application/vnd.microsoft.card.adaptive";
+  contentUrl: null;
+  content: AdaptiveCard;
+};
+
+export type TeamsPayload = {
+  type: "message";
+  attachments: AdaptiveCardAttachment[];
+};
 
 export type NameValue = { name: string; value: string };
 export type NameUrl = { name: string; url: string };
 
-export type FactSection = { facts: NameValue[] };
-export type Sections = { sections?: FactSection[] };
-
-export type ActionTarget = { os: string; uri: string };
-export type PotentialAction = {
-  potentialAction?: {
-    "@type": string;
-    name: string;
-    targets: ActionTarget[];
-  }[];
-};
 
 export type Config = {
   webhook_url: string;

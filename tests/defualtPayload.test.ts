@@ -28,22 +28,39 @@ test('when the payload does not have any html_url', () => {
 
   const actual = defaultPayload(ctx as any)
   const expected = {
-    title: 'unknown action',
-    text: 'event: workflow_run',
-    sections: [
-          {
-           facts:  [
-              {
-               name: "By",
-               value: "dummy_actor",
-             },
-              {
-               name: "Repository",
-               value: "dummy_repo",
-             },
-           ],
-         },
-       ],
+    type: 'message',
+    attachments: [
+      {
+        contentType: 'application/vnd.microsoft.card.adaptive',
+        contentUrl: null,
+        content: {
+          $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+          type: 'AdaptiveCard',
+          version: '1.2',
+          body: [
+            {
+              type: 'TextBlock',
+              text: 'unknown action',
+              weight: 'Bolder',
+              size: 'Medium',
+              wrap: true,
+            },
+            {
+              type: 'TextBlock',
+              text: 'event: workflow_run',
+              wrap: true,
+            },
+            {
+              type: 'FactSet',
+              facts: [
+                { title: 'By', value: 'dummy_actor' },
+                { title: 'Repository', value: 'dummy_repo' },
+              ],
+            },
+          ],
+        },
+      },
+    ],
   }
   expect(actual).toEqual(expected)
 })
@@ -73,41 +90,49 @@ test('when the payload has only repository html_url', () => {
     },
     payload: {
       repository: {
-        html_url: "https://dummy_repo_url"
+        html_url: 'https://dummy_repo_url'
       }
     }
   }
 
   const actual = defaultPayload(ctx as any)
   const expected = {
-    title: 'unknown action',
-    text: 'event: workflow_run',
-    potentialAction:  [
-          {
-           "@type": "OpenUri",
-           name: "Repository",
-           targets:  [
-              {
-               os: "default",
-               uri: "https://dummy_repo_url",
-             },
-           ],
-         },
-       ],
-    sections: [
-          {
-           facts:  [
-              {
-               name: "By",
-               value: "dummy_actor",
-             },
-              {
-               name: "Repository",
-               value: "dummy_repo",
-             },
-           ],
-         },
-       ],
+    type: 'message',
+    attachments: [
+      {
+        contentType: 'application/vnd.microsoft.card.adaptive',
+        contentUrl: null,
+        content: {
+          $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+          type: 'AdaptiveCard',
+          version: '1.2',
+          body: [
+            {
+              type: 'TextBlock',
+              text: 'unknown action',
+              weight: 'Bolder',
+              size: 'Medium',
+              wrap: true,
+            },
+            {
+              type: 'TextBlock',
+              text: 'event: workflow_run',
+              wrap: true,
+            },
+            {
+              type: 'FactSet',
+              facts: [
+                { title: 'By', value: 'dummy_actor' },
+                { title: 'Repository', value: 'dummy_repo' },
+              ],
+            },
+          ],
+          actions: [
+            { type: 'Action.OpenUrl', title: 'Repository', url: 'https://dummy_repo_url' },
+          ],
+        },
+      },
+    ],
   }
   expect(actual).toEqual(expected)
 })
@@ -137,41 +162,49 @@ test('when the payload has only workflow_run html_url', () => {
     },
     payload: {
       workflow_run: {
-        html_url: "https://dummy_repo_url"
+        html_url: 'https://dummy_repo_url'
       }
     }
   }
 
   const actual = defaultPayload(ctx as any)
   const expected = {
-    title: 'unknown action',
-    text: 'event: workflow_run',
-    potentialAction:  [
-          {
-           "@type": "OpenUri",
-           name: "Workflow Run",
-           targets:  [
-              {
-               os: "default",
-               uri: "https://dummy_repo_url",
-             },
-           ],
-         },
-       ],
-    sections: [
-          {
-           facts:  [
-              {
-               name: "By",
-               value: "dummy_actor",
-             },
-              {
-               name: "Repository",
-               value: "dummy_repo",
-             },
-           ],
-         },
-       ],
+    type: 'message',
+    attachments: [
+      {
+        contentType: 'application/vnd.microsoft.card.adaptive',
+        contentUrl: null,
+        content: {
+          $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+          type: 'AdaptiveCard',
+          version: '1.2',
+          body: [
+            {
+              type: 'TextBlock',
+              text: 'unknown action',
+              weight: 'Bolder',
+              size: 'Medium',
+              wrap: true,
+            },
+            {
+              type: 'TextBlock',
+              text: 'event: workflow_run',
+              wrap: true,
+            },
+            {
+              type: 'FactSet',
+              facts: [
+                { title: 'By', value: 'dummy_actor' },
+                { title: 'Repository', value: 'dummy_repo' },
+              ],
+            },
+          ],
+          actions: [
+            { type: 'Action.OpenUrl', title: 'Workflow Run', url: 'https://dummy_repo_url' },
+          ],
+        },
+      },
+    ],
   }
   expect(actual).toEqual(expected)
 })

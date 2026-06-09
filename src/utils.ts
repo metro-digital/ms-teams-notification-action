@@ -1,9 +1,10 @@
 import {
-  ContextPayload,
+  AdaptiveCardAction,
+  AdaptiveCardBodyItem,
+  AdaptiveCardFactSet,
   NameUrl,
   NameValue,
-  PotentialAction,
-  Sections,
+  TeamsPayload,
 } from "./types";
 import type { Context } from "@actions/github/lib/context";
 
@@ -42,6 +43,7 @@ export const workflowNameFact = (ctx: Context): NameValue => ({
   name: "Workflow name",
   value: ctx.payload["workflow"].name,
 });
+
 export const headCommitFact = (ctx: Context): NameValue => ({
   name: "Head commit",
   value: ctx.payload["workflow_run"].head_commit.message,
@@ -86,34 +88,57 @@ export const headCommitUrl = (ctx: Context): NameUrl => ({
   url: ctx.payload["head_commit"].url,
 });
 
-export const factSection = (facts: NameValue[]): Sections => ({
-  sections: [
+export const factSection = (facts: NameValue[]): AdaptiveCardFactSet => ({
+  type: "FactSet",
+  facts: facts.map(({ name, value }) => ({ title: name, value })),
+});
+
+export const urlActions = (values: NameUrl[]): AdaptiveCardAction[] =>
+  values.map(({ name, url }) => ({
+    type: "Action.OpenUrl",
+    title: name,
+    url,
+  }));
+
+export const buildTeamsPayload = (
+  title: string,
+  body: AdaptiveCardBodyItem[],
+  actions: AdaptiveCardAction[],
+  accentColor?: "Good" | "Attention",
+): TeamsPayload => ({
+  type: "message",
+  attachments: [
     {
-      facts,
+      contentType: "application/vnd.microsoft.card.adaptive",
+      contentUrl: null,
+      content: {
+        $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+        type: "AdaptiveCard",
+        version: "1.2",
+        body: [
+          {
+            type: "TextBlock",
+            text: title,
+            weight: "Bolder",
+            size: "Medium",
+            ...(accentColor ? { color: accentColor } : {}),
+            wrap: true,
+          },
+          ...body,
+        ],
+        ...(actions.length > 0 ? { actions } : {}),
+      },
     },
   ],
 });
 
-export const urlSection = (values: NameUrl[]): PotentialAction => ({
-  potentialAction: values.map(({ name, url }) => ({
-    "@type": "OpenUri",
-    name,
-    targets: [
-      {
-        os: "default",
-        uri: url,
-      },
-    ],
-  })),
-});
-
-export const defaultPayload = (ctx: Context): ContextPayload => {
-  let payload = {
-    title: "unknown action",
-    text: `event: ${ctx.eventName}`,
-  };
-
+export const defaultPayload = (ctx: Context): TeamsPayload => {
+  const body: AdaptiveCardBodyItem[] = [
+    { type: "TextBlock", text: `event: ${ctx.eventName}`, wrap: true },
+  ];
+  const facts: NameValue[] = [];
   const urls: NameUrl[] = [];
+
   if (ctx.payload.repository?.html_url) {
     urls.push(repoUrl(ctx));
   }
@@ -122,7 +147,6 @@ export const defaultPayload = (ctx: Context): ContextPayload => {
     urls.push(workflowRunUrl(ctx));
   }
 
-  const facts: NameValue[] = [];
   if (ctx.actor) {
     facts.push(senderFact(ctx));
   }
@@ -131,12 +155,9 @@ export const defaultPayload = (ctx: Context): ContextPayload => {
     facts.push(repositoryFact(ctx));
   }
 
-  if (urls.length > 0) {
-    payload = { ...payload, ...urlSection(urls) };
-  }
   if (facts.length > 0) {
-    payload = { ...payload, ...factSection(facts) };
+    body.push(factSection(facts));
   }
 
-  return payload;
+  return buildTeamsPayload("unknown action", body, urlActions(urls));
 };

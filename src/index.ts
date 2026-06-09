@@ -1,8 +1,9 @@
 import { info, setFailed, getInput } from "@actions/core";
 import { context } from "@actions/github";
 import { Context } from "@actions/github/lib/context";
-import { Config, ContextPayload, PayloadHeader } from "./types";
+import { Config, TeamsPayload } from "./types";
 import {
+  buildTeamsPayload,
   changelogFact,
   defaultPayload,
   factSection,
@@ -12,7 +13,7 @@ import {
   repoUrl,
   repositoryFact,
   senderFact,
-  urlSection,
+  urlActions,
   workflowNameFact,
   workflowRunUrl,
 } from "./utils";
@@ -26,13 +27,7 @@ async function run(): Promise<void> {
     }
 
     const ctx = context;
-    const payload: PayloadHeader & ContextPayload = {
-      "@context": "http://schema.org/extensions",
-      "@type": "MessageCard",
-      themeColor: "0076D7",
-      summary: ctx.eventName,
-      ...getContextPayload(ctx, getConfig()),
-    };
+    const payload: TeamsPayload = getContextPayload(ctx, config);
 
     const response = await fetch(config.webhook_url, {
       body: JSON.stringify(payload),
@@ -41,14 +36,11 @@ async function run(): Promise<void> {
       redirect: "manual",
     });
 
-    if (!response?.text) {
+    if (!response.ok) {
+      const body = await response.text();
       info(JSON.stringify(payload, null, 2));
       throw new Error(
-        `${"Failed to send notification to Microsoft Teams.\n Response:\n"}${JSON.stringify(
-          response,
-          null,
-          2,
-        )}`,
+        `Failed to send notification to Microsoft Teams.\nStatus: ${response.status}\nResponse: ${body}`,
       );
     }
   } catch (err) {
@@ -75,7 +67,7 @@ const getConfig = (): Config => {
   return result;
 };
 
-const getContextPayload = (ctx: Context, config: Config): ContextPayload => {
+const getContextPayload = (ctx: Context, config: Config): TeamsPayload => {
   if (
     (ctx.eventName === "pull_request" ||
       ctx.eventName === "pull_request_target") &&
@@ -83,24 +75,22 @@ const getContextPayload = (ctx: Context, config: Config): ContextPayload => {
   ) {
     const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : "";
 
-    return {
-      title: `Pull request ${ctx.payload.action}`,
-      text,
-      ...factSection([senderFact(ctx), repositoryFact(ctx)]),
-      ...urlSection([repoUrl(ctx), pullRequestUrl(ctx)]),
-    };
+    return buildTeamsPayload(
+      `Pull request ${ctx.payload.action}`,
+      [
+        { type: "TextBlock", text, wrap: true },
+        factSection([senderFact(ctx), repositoryFact(ctx)]),
+      ],
+      urlActions([repoUrl(ctx), pullRequestUrl(ctx)]),
+    );
   }
 
   if (ctx.eventName === "push") {
-    return {
-      title: `Push to ${ctx.ref}`,
-      ...factSection([
-        senderFact(ctx),
-        repositoryFact(ctx),
-        changelogFact(ctx),
-      ]),
-      ...urlSection([repoUrl(ctx), headCommitUrl(ctx)]),
-    };
+    return buildTeamsPayload(
+      `Push to ${ctx.ref}`,
+      [factSection([senderFact(ctx), repositoryFact(ctx), changelogFact(ctx)])],
+      urlActions([repoUrl(ctx), headCommitUrl(ctx)]),
+    );
   }
 
   if (
@@ -109,20 +99,20 @@ const getContextPayload = (ctx: Context, config: Config): ContextPayload => {
       ctx.payload["workflow_run"].conclusion,
     )
   ) {
-    return {
-      title: `Workflow ${ctx.payload["workflow_run"].conclusion}`,
-      themeColor:
-        ctx.payload["workflow_run"].conclusion === "failure"
-          ? "FF0000"
-          : "00FF00",
-      ...factSection([
-        senderFact(ctx),
-        repositoryFact(ctx),
-        workflowNameFact(ctx),
-        headCommitFact(ctx),
-      ]),
-      ...urlSection([repoUrl(ctx), workflowRunUrl(ctx)]),
-    };
+    const conclusion = ctx.payload["workflow_run"].conclusion;
+    return buildTeamsPayload(
+      `Workflow ${conclusion}`,
+      [
+        factSection([
+          senderFact(ctx),
+          repositoryFact(ctx),
+          workflowNameFact(ctx),
+          headCommitFact(ctx),
+        ]),
+      ],
+      urlActions([repoUrl(ctx), workflowRunUrl(ctx)]),
+      conclusion === "failure" ? "Attention" : "Good",
+    );
   }
 
   info(JSON.stringify(ctx, null, 2));
