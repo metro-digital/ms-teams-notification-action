@@ -5,7 +5,14 @@ export type AdaptiveCardTextBlock = {
   text: string;
   weight?: "Bolder" | "Default" | "Lighter";
   size?: "Small" | "Default" | "Medium" | "Large" | "ExtraLarge";
-  color?: "Default" | "Dark" | "Light" | "Accent" | "Good" | "Warning" | "Attention";
+  color?:
+    | "Default"
+    | "Dark"
+    | "Light"
+    | "Accent"
+    | "Good"
+    | "Warning"
+    | "Attention";
   wrap?: boolean;
 };
 
@@ -43,7 +50,6 @@ export type TeamsPayload = {
 
 export type NameValue = { name: string; value: string };
 export type NameUrl = { name: string; url: string };
-
 
 export type Config = {
   webhook_url: string;
