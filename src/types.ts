@@ -39,7 +39,6 @@ export type AdaptiveCard = {
 
 export type AdaptiveCardAttachment = {
   contentType: "application/vnd.microsoft.card.adaptive";
-  contentUrl: null;
   content: AdaptiveCard;
 };
 

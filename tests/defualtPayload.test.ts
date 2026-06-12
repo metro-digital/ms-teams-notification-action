@@ -32,11 +32,10 @@ test('when the payload does not have any html_url', () => {
     attachments: [
       {
         contentType: 'application/vnd.microsoft.card.adaptive',
-        contentUrl: null,
         content: {
           $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
           type: 'AdaptiveCard',
-          version: '1.2',
+          version: '1.4',
           body: [
             {
               type: 'TextBlock',
@@ -101,11 +100,10 @@ test('when the payload has only repository html_url', () => {
     attachments: [
       {
         contentType: 'application/vnd.microsoft.card.adaptive',
-        contentUrl: null,
         content: {
           $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
           type: 'AdaptiveCard',
-          version: '1.2',
+          version: '1.4',
           body: [
             {
               type: 'TextBlock',
@@ -173,11 +171,10 @@ test('when the payload has only workflow_run html_url', () => {
     attachments: [
       {
         contentType: 'application/vnd.microsoft.card.adaptive',
-        contentUrl: null,
         content: {
           $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
           type: 'AdaptiveCard',
-          version: '1.2',
+          version: '1.4',
           body: [
             {
               type: 'TextBlock',
