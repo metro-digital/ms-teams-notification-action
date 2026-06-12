@@ -35,4 +35,4 @@ jobs:
       - name: Send pull requests to Microsoft Teams
         uses: ./
         with:
-          webhook_url: ${{ secrets.TEAMS_WEBHOOK_JAN_TMP }}
+          webhook_url: ${{ secrets.MSTEAMS_WEBHOOK }}
