@@ -23101,29 +23101,44 @@ var headCommitUrl = (ctx) => ({
   url: ctx.payload["head_commit"].url
 });
 var factSection = (facts) => ({
-  sections: [
+  type: "FactSet",
+  facts: facts.map(({ name, value }) => ({ title: name, value }))
+});
+var urlActions = (values) => values.map(({ name, url }) => ({
+  type: "Action.OpenUrl",
+  title: name,
+  url
+}));
+var buildTeamsPayload = (title, body, actions, accentColor) => ({
+  type: "message",
+  attachments: [
     {
-      facts
+      contentType: "application/vnd.microsoft.card.adaptive",
+      content: {
+        $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+        type: "AdaptiveCard",
+        version: "1.4",
+        body: [
+          {
+            type: "TextBlock",
+            text: title,
+            weight: "Bolder",
+            size: "Medium",
+            ...accentColor ? { color: accentColor } : {},
+            wrap: true
+          },
+          ...body
+        ],
+        ...actions.length > 0 ? { actions } : {}
+      }
     }
   ]
 });
-var urlSection = (values) => ({
-  potentialAction: values.map(({ name, url }) => ({
-    "@type": "OpenUri",
-    name,
-    targets: [
-      {
-        os: "default",
-        uri: url
-      }
-    ]
-  }))
-});
 var defaultPayload = (ctx) => {
-  let payload = {
-    title: "unknown action",
-    text: `event: ${ctx.eventName}`
-  };
+  const body = [
+    { type: "TextBlock", text: `event: ${ctx.eventName}`, wrap: true }
+  ];
+  const facts = [];
   const urls = [];
   if (ctx.payload.repository?.html_url) {
     urls.push(repoUrl(ctx));
@@ -23131,20 +23146,16 @@ var defaultPayload = (ctx) => {
   if (ctx.payload["workflow_run"]?.html_url) {
     urls.push(workflowRunUrl(ctx));
   }
-  const facts = [];
   if (ctx.actor) {
     facts.push(senderFact(ctx));
   }
   if (ctx.repo.repo) {
     facts.push(repositoryFact(ctx));
   }
-  if (urls.length > 0) {
-    payload = { ...payload, ...urlSection(urls) };
-  }
   if (facts.length > 0) {
-    payload = { ...payload, ...factSection(facts) };
+    body.push(factSection(facts));
   }
-  return payload;
+  return buildTeamsPayload("unknown action", body, urlActions(urls));
 };
 
 // src/index.ts
@@ -23155,27 +23166,20 @@ async function run() {
       throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
     }
     const ctx = import_github.context;
-    const payload = {
-      "@context": "http://schema.org/extensions",
-      "@type": "MessageCard",
-      themeColor: "0076D7",
-      summary: ctx.eventName,
-      ...getContextPayload(ctx, getConfig())
-    };
+    const payload = getContextPayload(ctx, config);
     const response = await fetch(config.webhook_url, {
       body: JSON.stringify(payload),
       method: "POST",
       headers: { "Content-Type": "application/json" },
       redirect: "manual"
     });
-    if (!response?.text) {
+    if (!response.ok) {
+      const body = await response.text();
       (0, import_core.info)(JSON.stringify(payload, null, 2));
       throw new Error(
-        `${"Failed to send notification to Microsoft Teams.\n Response:\n"}${JSON.stringify(
-          response,
-          null,
-          2
-        )}`
+        `Failed to send notification to Microsoft Teams.
+Status: ${response.status}
+Response: ${body}`
       );
     }
   } catch (err) {
@@ -23199,38 +23203,39 @@ var getConfig = () => {
 var getContextPayload = (ctx, config) => {
   if ((ctx.eventName === "pull_request" || ctx.eventName === "pull_request_target") && (ctx.payload.action === "opened" || ctx.payload.action === "reopened")) {
     const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : "";
-    return {
-      title: `Pull request ${ctx.payload.action}`,
-      text,
-      ...factSection([senderFact(ctx), repositoryFact(ctx)]),
-      ...urlSection([repoUrl(ctx), pullRequestUrl(ctx)])
-    };
+    return buildTeamsPayload(
+      `Pull request ${ctx.payload.action}`,
+      [
+        { type: "TextBlock", text, wrap: true },
+        factSection([senderFact(ctx), repositoryFact(ctx)])
+      ],
+      urlActions([repoUrl(ctx), pullRequestUrl(ctx)])
+    );
   }
   if (ctx.eventName === "push") {
-    return {
-      title: `Push to ${ctx.ref}`,
-      ...factSection([
-        senderFact(ctx),
-        repositoryFact(ctx),
-        changelogFact(ctx)
-      ]),
-      ...urlSection([repoUrl(ctx), headCommitUrl(ctx)])
-    };
+    return buildTeamsPayload(
+      `Push to ${ctx.ref}`,
+      [factSection([senderFact(ctx), repositoryFact(ctx), changelogFact(ctx)])],
+      urlActions([repoUrl(ctx), headCommitUrl(ctx)])
+    );
   }
   if (ctx.eventName === "workflow_run" && config.workflow_run_conclusion.includes(
     ctx.payload["workflow_run"].conclusion
   )) {
-    return {
-      title: `Workflow ${ctx.payload["workflow_run"].conclusion}`,
-      themeColor: ctx.payload["workflow_run"].conclusion === "failure" ? "FF0000" : "00FF00",
-      ...factSection([
-        senderFact(ctx),
-        repositoryFact(ctx),
-        workflowNameFact(ctx),
-        headCommitFact(ctx)
-      ]),
-      ...urlSection([repoUrl(ctx), workflowRunUrl(ctx)])
-    };
+    const conclusion = ctx.payload["workflow_run"].conclusion;
+    return buildTeamsPayload(
+      `Workflow ${conclusion}`,
+      [
+        factSection([
+          senderFact(ctx),
+          repositoryFact(ctx),
+          workflowNameFact(ctx),
+          headCommitFact(ctx)
+        ])
+      ],
+      urlActions([repoUrl(ctx), workflowRunUrl(ctx)]),
+      conclusion === "failure" ? "Attention" : "Good"
+    );
   }
   (0, import_core.info)(JSON.stringify(ctx, null, 2));
   return defaultPayload(ctx);
