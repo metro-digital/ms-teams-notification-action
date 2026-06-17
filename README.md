@@ -6,7 +6,36 @@
 # MS Teams Notification Action
 
 A GitHub action that sends notifications to MS Teams on events specified in the
-workflow. 
+workflow.
+
+## Version Information
+
+- **v2**: Uses Power Automate workflow integration for enhanced notification capabilities
+- **v1**: Uses legacy MS Teams webhooks
+
+## Breaking Changes in v2
+
+Version 2 introduces a significant change in how notifications are delivered:
+
+### Migration from Webhooks to Power Automate Workflow
+
+**v1** used direct MS Teams webhook URLs for sending notifications. **v2** transitions to Power Automate workflow integration for improved reliability, formatting, and scalability.
+
+**Breaking Changes:**
+- The `webhook_url` input parameter is deprecated in v2
+- Power Automate workflow URL configuration is now required
+- Payload structure and formatting have been updated
+- Some webhook-specific options are no longer supported
+
+**Migration Guide:**
+If you're upgrading from v1 to v2, you will need to:
+1. Set up a Power Automate workflow in your tenant
+2. Update your GitHub workflow configuration to use the new `power_automate_url` parameter
+3. Test notifications in a non-production environment first
+
+**For v1 Users:**
+v1 continues to be available and supported. To stay on v1, pin your workflow to `@v1.0.3` or use the `v1` branch.
+
 
 Supported events: 
   ```
@@ -53,6 +82,8 @@ jobs:
           workflow_run_success: true # default is true
           workflow_run_failure: true # default is true
 ```
+
+
 
 ## License
 
