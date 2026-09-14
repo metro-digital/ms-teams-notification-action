@@ -14,6 +14,7 @@ import {
   repositoryFact,
   senderFact,
   urlActions,
+  versionBranchMismatchFact,
   workflowNameFact,
   workflowRunUrl,
 } from "./utils";
@@ -27,7 +28,7 @@ async function run(): Promise<void> {
     }
 
     const ctx = context;
-    const payload: TeamsPayload = getContextPayload(ctx, config);
+    const payload: TeamsPayload = await getContextPayload(ctx, config);
 
     const response = await fetch(config.webhook_url, {
       body: JSON.stringify(payload),
@@ -51,6 +52,7 @@ async function run(): Promise<void> {
 const getConfig = (): Config => {
   const result: Config = {
     webhook_url: getInput("webhook_url"),
+    github_token: getInput("github_token"),
     workflow_run_conclusion: [],
   };
 
@@ -67,7 +69,10 @@ const getConfig = (): Config => {
   return result;
 };
 
-const getContextPayload = (ctx: Context, config: Config): TeamsPayload => {
+const getContextPayload = async (
+  ctx: Context,
+  config: Config,
+): Promise<TeamsPayload> => {
   if (
     (ctx.eventName === "pull_request" ||
       ctx.eventName === "pull_request_target") &&
@@ -100,16 +105,24 @@ const getContextPayload = (ctx: Context, config: Config): TeamsPayload => {
     )
   ) {
     const conclusion = ctx.payload["workflow_run"].conclusion;
+    const facts = [
+      senderFact(ctx),
+      repositoryFact(ctx),
+      workflowNameFact(ctx),
+      headCommitFact(ctx),
+    ];
+
+    const mismatchFact = await versionBranchMismatchFact(
+      ctx,
+      config.github_token,
+    );
+    if (mismatchFact) {
+      facts.push(mismatchFact);
+    }
+
     return buildTeamsPayload(
       `Workflow ${conclusion}`,
-      [
-        factSection([
-          senderFact(ctx),
-          repositoryFact(ctx),
-          workflowNameFact(ctx),
-          headCommitFact(ctx),
-        ]),
-      ],
+      [factSection(facts)],
       urlActions([repoUrl(ctx), workflowRunUrl(ctx)]),
       conclusion === "failure" ? "Attention" : "Good",
     );

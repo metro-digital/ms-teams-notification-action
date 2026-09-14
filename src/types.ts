@@ -46,5 +46,6 @@ export type NameUrl = { name: string; url: string };
 
 export type Config = {
   webhook_url: string;
+  github_token: string;
   workflow_run_conclusion: ("success" | "failure")[];
 };

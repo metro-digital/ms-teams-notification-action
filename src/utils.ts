@@ -49,6 +49,56 @@ export const headCommitFact = (ctx: Context): NameValue => ({
   value: ctx.payload["workflow_run"].head_commit.message,
 });
 
+export const isVersionBranch = (branch: string): boolean =>
+  branch.startsWith("v");
+
+const getMainBranchHeadSha = async (
+  ctx: Context,
+  token: string,
+): Promise<string> => {
+  const { owner, repo } = ctx.repo;
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/branches/main`,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch main branch info.\nStatus: ${response.status}`,
+    );
+  }
+
+  const data = (await response.json()) as { commit: { sha: string } };
+  return data.commit.sha;
+};
+
+export const versionBranchMismatchFact = async (
+  ctx: Context,
+  token: string,
+): Promise<NameValue | null> => {
+  const headBranch = ctx.payload["workflow_run"].head_branch;
+  const headSha = ctx.payload["workflow_run"].head_sha;
+
+  if (!isVersionBranch(headBranch)) {
+    return null;
+  }
+
+  const mainSha = await getMainBranchHeadSha(ctx, token);
+  if (mainSha === headSha) {
+    return null;
+  }
+
+  return {
+    name: "⚠️ Version branch warning",
+    value: `Head commit (${headSha}) does not match main (${mainSha}).`,
+  };
+};
+
 export const repoUrl = (ctx: Context): NameUrl => {
   if (
     typeof ctx.payload.repository !== "object" ||
@@ -87,8 +137,6 @@ export const headCommitUrl = (ctx: Context): NameUrl => ({
   name: "Head Commit",
   url: ctx.payload["head_commit"].url,
 });
-
-
 
 export const factSection = (facts: NameValue[]): AdaptiveCardFactSet => ({
   type: "FactSet",
