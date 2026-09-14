@@ -6,13 +6,7 @@ export type AdaptiveCardTextBlock = {
   weight?: "Bolder" | "Default" | "Lighter";
   size?: "Small" | "Default" | "Medium" | "Large" | "ExtraLarge";
   color?:
-    | "Default"
-    | "Dark"
-    | "Light"
-    | "Accent"
-    | "Good"
-    | "Warning"
-    | "Attention";
+    "Default" | "Dark" | "Light" | "Accent" | "Good" | "Warning" | "Attention";
   wrap?: boolean;
 };
 

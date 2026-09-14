@@ -88,6 +88,8 @@ export const headCommitUrl = (ctx: Context): NameUrl => ({
   url: ctx.payload["head_commit"].url,
 });
 
+
+
 export const factSection = (facts: NameValue[]): AdaptiveCardFactSet => ({
   type: "FactSet",
   facts: facts.map(({ name, value }) => ({ title: name, value })),
