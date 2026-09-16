@@ -43,14 +43,26 @@ var repositoryFact = (ctx) => ({
   name: "Repository",
   value: ctx.repo.repo
 });
-var workflowNameFact = (ctx) => ({
-  name: "Workflow name",
-  value: ctx.payload["workflow"].name
-});
-var headCommitFact = (ctx) => ({
-  name: "Head commit",
-  value: ctx.payload["workflow_run"].head_commit.message
-});
+var workflowNameFact = (ctx) => {
+  const workflow = ctx.payload.workflow;
+  if (typeof workflow !== "object" || workflow === null || typeof workflow.name !== "string") {
+    throw new Error("Could not determine workflow name");
+  }
+  return {
+    name: "Workflow name",
+    value: workflow.name
+  };
+};
+var headCommitFact = (ctx) => {
+  const workflowRun = ctx.payload.workflow_run;
+  if (typeof workflowRun !== "object" || workflowRun === null || typeof workflowRun.head_commit !== "object" || workflowRun.head_commit === null || typeof workflowRun.head_commit.message !== "string") {
+    throw new Error("Could not determine head commit");
+  }
+  return {
+    name: "Head commit",
+    value: workflowRun.head_commit.message
+  };
+};
 var isVersionBranch = (branch) => branch.startsWith("v+");
 var getFirstWorkflowRunJobId = async (jobsUrl, token) => {
   const response = await fetch(jobsUrl, {
@@ -107,30 +119,35 @@ var extractHeadSha = (logs) => {
   const shaMatch = commandMatch[1].match(/([0-9a-f]{40})/);
   return shaMatch ? shaMatch[1] : null;
 };
-var versionBranchMismatchFact = async (ctx, token) => {
+var deployedReleaseFact = async (ctx, token) => {
   if (ctx.eventName !== "workflow_run") {
     return null;
   }
-  const jobsUrl = ctx.payload["workflow_run"].jobs_url;
+  const workflowRun = ctx.payload.workflow_run;
+  if (typeof workflowRun !== "object" || workflowRun === null) {
+    return null;
+  }
+  const jobsUrl = workflowRun.jobs_url;
+  if (typeof jobsUrl !== "string") {
+    return null;
+  }
   const jobId = await getFirstWorkflowRunJobId(jobsUrl, token);
   const logs = await getJobLogs(ctx, jobId, token);
   const checkoutRef = extractCheckoutRef(logs);
   const tagSha = extractHeadSha(logs);
-  info(`checkoutRef: ${checkoutRef}, tagSha: ${tagSha}`);
   if (!checkoutRef || !tagSha || !isVersionBranch(checkoutRef)) {
     return null;
   }
-  const mainSha = ctx.payload["workflow_run"].head_sha;
-  info(`mainSha: ${mainSha}`);
+  const mainSha = workflowRun.head_sha;
   if (mainSha === tagSha) {
     return {
-      name: "Deployed version",
+      name: "Deployed release",
       value: `${checkoutRef}`
     };
   }
   return {
-    name: "Deployed version",
-    value: `${checkoutRef} is not newest \u26A0\uFE0F.`
+    name: "Deployed release",
+    value: `${checkoutRef} isn't the newest \u26A0\uFE0F`
   };
 };
 var repoUrl = (ctx) => {
@@ -151,14 +168,26 @@ var pullRequestUrl = (ctx) => {
     url: ctx.payload.pull_request.html_url
   };
 };
-var workflowRunUrl = (ctx) => ({
-  name: "Workflow Run",
-  url: ctx.payload["workflow_run"].html_url
-});
-var headCommitUrl = (ctx) => ({
-  name: "Head Commit",
-  url: ctx.payload["head_commit"].url
-});
+var workflowRunUrl = (ctx) => {
+  const workflowRun = ctx.payload.workflow_run;
+  if (typeof workflowRun !== "object" || workflowRun === null || typeof workflowRun.html_url !== "string") {
+    throw new Error("Could not determine workflowRunUrl");
+  }
+  return {
+    name: "Workflow Run",
+    url: workflowRun.html_url
+  };
+};
+var headCommitUrl = (ctx) => {
+  const headCommit = ctx.payload.head_commit;
+  if (typeof headCommit !== "object" || headCommit === null || typeof headCommit.url !== "string") {
+    throw new Error("Could not determine headCommitUrl");
+  }
+  return {
+    name: "Head Commit",
+    url: headCommit.url
+  };
+};
 var factSection = (facts) => ({
   type: "FactSet",
   facts: facts.map(({ name, value }) => ({ title: name, value }))
@@ -225,8 +254,6 @@ async function run() {
       throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
     }
     const ctx = getContext();
-    info(`GitHub context:
-${JSON.stringify(ctx, null, 2)}`);
     const payload = await getContextPayload(ctx, config);
     const response = await fetch(config.webhook_url, {
       body: JSON.stringify(payload),
@@ -294,20 +321,16 @@ var getContextPayload = async (ctx, config) => {
       urlActions([repoUrl(ctx), headCommitUrl(ctx)])
     );
   }
-  if (ctx.eventName === "workflow_run" && config.workflow_run_conclusion.includes(
-    ctx.payload["workflow_run"].conclusion
-  )) {
-    const conclusion = ctx.payload["workflow_run"].conclusion;
+  const workflowRun = ctx.payload.workflow_run;
+  if (ctx.eventName === "workflow_run" && workflowRun && workflowRun.conclusion && config.workflow_run_conclusion.includes(workflowRun.conclusion)) {
+    const conclusion = workflowRun.conclusion;
     const facts = [
       senderFact(ctx),
       repositoryFact(ctx),
       workflowNameFact(ctx),
       headCommitFact(ctx)
     ];
-    const mismatchFact = await versionBranchMismatchFact(
-      ctx,
-      config.github_token
-    );
+    const mismatchFact = await deployedReleaseFact(ctx, config.github_token);
     if (mismatchFact) {
       facts.push(mismatchFact);
     }

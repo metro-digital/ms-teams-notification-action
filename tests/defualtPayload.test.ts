@@ -1,4 +1,4 @@
-import { defaultPayload, versionBranchMismatchFact } from '../src/utils'
+import { defaultPayload, deployedReleaseFact } from '../src/utils'
 
 describe('defaultPayload', () => {
   test('when the payload does not have any html_url', () => {
@@ -208,7 +208,7 @@ describe('defaultPayload', () => {
   })
 })
 
-describe('versionBranchMismatchFact', () => {
+describe('deployedReleaseFact', () => {
   const jobsUrl = 'https://api.github.com/repos/dummy_owner/dummy_repo/actions/runs/1/jobs'
   const jobLogs = (ref: string, sha: string) => [
     '##[group]Run actions/checkout@v7',
@@ -253,7 +253,7 @@ describe('versionBranchMismatchFact', () => {
   })
 
   test('returns null when event is not workflow_run', async () => {
-    const actual = await versionBranchMismatchFact(makeCtx('push'), 'test-token')
+    const actual = await deployedReleaseFact(makeCtx('push'), 'test-token')
 
     expect(actual).toBeNull()
   })
@@ -264,30 +264,30 @@ describe('versionBranchMismatchFact', () => {
   test('returns null when checked-out ref does not start with v+', async () => {
     mockFetch('main', tagSha)
 
-    const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
+    const actual = await deployedReleaseFact(makeCtx('workflow_run', mainSha), 'test-token')
 
     expect(actual).toBeNull()
   })
 
-  test('returns deployed version fact when tag sha matches triggering head sha', async () => {
+  test('returns deployed release fact when tag sha matches triggering head sha', async () => {
     mockFetch('v+2.1', mainSha)
 
-    const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
+    const actual = await deployedReleaseFact(makeCtx('workflow_run', mainSha), 'test-token')
 
     expect(actual).toEqual({
-      name: 'Deployed version',
+      name: 'Deployed release',
       value: 'v+2.1'
     })
   })
 
-  test('returns deployed version fact with warning when tag sha differs from triggering head sha', async () => {
+  test('returns deployed release fact with warning when tag sha differs from triggering head sha', async () => {
     mockFetch('v+2.1', tagSha)
 
-    const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
+    const actual = await deployedReleaseFact(makeCtx('workflow_run', mainSha), 'test-token')
 
     expect(actual).toEqual({
-      name: 'Deployed version',
-      value: 'v+2.1 is not newest ⚠️.'
+      name: 'Deployed release',
+      value: `v+2.1 isn't the newest ⚠️`
     })
   })
 })

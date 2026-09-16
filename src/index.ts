@@ -13,7 +13,7 @@ import {
   repositoryFact,
   senderFact,
   urlActions,
-  versionBranchMismatchFact,
+  deployedReleaseFact,
   workflowNameFact,
   workflowRunUrl,
 } from "./utils";
@@ -27,7 +27,6 @@ async function run(): Promise<void> {
     }
 
     const ctx = getContext();
-    info(`GitHub context:\n${JSON.stringify(ctx, null, 2)}`);
     const payload: TeamsPayload = await getContextPayload(ctx, config);
 
     const response = await fetch(config.webhook_url, {
@@ -120,13 +119,15 @@ const getContextPayload = async (
     );
   }
 
+  const workflowRun = ctx.payload.workflow_run;
+
   if (
     ctx.eventName === "workflow_run" &&
-    config.workflow_run_conclusion.includes(
-      ctx.payload["workflow_run"].conclusion,
-    )
+    workflowRun &&
+    workflowRun.conclusion &&
+    config.workflow_run_conclusion.includes(workflowRun.conclusion)
   ) {
-    const conclusion = ctx.payload["workflow_run"].conclusion;
+    const conclusion = workflowRun.conclusion;
     const facts = [
       senderFact(ctx),
       repositoryFact(ctx),
@@ -134,10 +135,7 @@ const getContextPayload = async (
       headCommitFact(ctx),
     ];
 
-    const mismatchFact = await versionBranchMismatchFact(
-      ctx,
-      config.github_token,
-    );
+    const mismatchFact = await deployedReleaseFact(ctx, config.github_token);
     if (mismatchFact) {
       facts.push(mismatchFact);
     }

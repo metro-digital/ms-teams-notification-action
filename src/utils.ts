@@ -1,4 +1,3 @@
-import { info } from "./core";
 import {
   AdaptiveCardAction,
   AdaptiveCardBodyItem,
@@ -40,15 +39,41 @@ export const repositoryFact = (ctx: Context): NameValue => ({
   value: ctx.repo.repo,
 });
 
-export const workflowNameFact = (ctx: Context): NameValue => ({
-  name: "Workflow name",
-  value: ctx.payload["workflow"].name,
-});
+export const workflowNameFact = (ctx: Context): NameValue => {
+  const workflow = ctx.payload.workflow;
 
-export const headCommitFact = (ctx: Context): NameValue => ({
-  name: "Head commit",
-  value: ctx.payload["workflow_run"].head_commit.message,
-});
+  if (
+    typeof workflow !== "object" ||
+    workflow === null ||
+    typeof workflow.name !== "string"
+  ) {
+    throw new Error("Could not determine workflow name");
+  }
+
+  return {
+    name: "Workflow name",
+    value: workflow.name,
+  };
+};
+
+export const headCommitFact = (ctx: Context): NameValue => {
+  const workflowRun = ctx.payload.workflow_run;
+
+  if (
+    typeof workflowRun !== "object" ||
+    workflowRun === null ||
+    typeof workflowRun.head_commit !== "object" ||
+    workflowRun.head_commit === null ||
+    typeof workflowRun.head_commit.message !== "string"
+  ) {
+    throw new Error("Could not determine head commit");
+  }
+
+  return {
+    name: "Head commit",
+    value: workflowRun.head_commit.message,
+  };
+};
 
 export const isVersionBranch = (branch: string): boolean =>
   branch.startsWith("v+");
@@ -126,7 +151,7 @@ const extractHeadSha = (logs: string): string | null => {
   return shaMatch ? shaMatch[1] : null;
 };
 
-export const versionBranchMismatchFact = async (
+export const deployedReleaseFact = async (
   ctx: Context,
   token: string,
 ): Promise<NameValue | null> => {
@@ -134,32 +159,38 @@ export const versionBranchMismatchFact = async (
     return null;
   }
 
-  const jobsUrl = ctx.payload["workflow_run"].jobs_url;
+  const workflowRun = ctx.payload.workflow_run;
+  if (typeof workflowRun !== "object" || workflowRun === null) {
+    return null;
+  }
+
+  const jobsUrl = workflowRun.jobs_url;
+  if (typeof jobsUrl !== "string") {
+    return null;
+  }
+
   const jobId = await getFirstWorkflowRunJobId(jobsUrl, token);
   const logs = await getJobLogs(ctx, jobId, token);
 
   const checkoutRef = extractCheckoutRef(logs);
   const tagSha = extractHeadSha(logs);
 
-  info(`checkoutRef: ${checkoutRef}, tagSha: ${tagSha}`);
-
   if (!checkoutRef || !tagSha || !isVersionBranch(checkoutRef)) {
     return null;
   }
 
-  const mainSha = ctx.payload["workflow_run"].head_sha;
-  info(`mainSha: ${mainSha}`);
+  const mainSha = workflowRun.head_sha;
 
   if (mainSha === tagSha) {
     return {
-      name: "Deployed version",
+      name: "Deployed release",
       value: `${checkoutRef}`,
     };
   }
 
   return {
-    name: "Deployed version",
-    value: `${checkoutRef} is not newest ⚠️.`,
+    name: "Deployed release",
+    value: `${checkoutRef} isn't the newest ⚠️`,
   };
 };
 
@@ -192,15 +223,39 @@ export const pullRequestUrl = (ctx: Context): NameUrl => {
   };
 };
 
-export const workflowRunUrl = (ctx: Context): NameUrl => ({
-  name: "Workflow Run",
-  url: ctx.payload["workflow_run"].html_url,
-});
+export const workflowRunUrl = (ctx: Context): NameUrl => {
+  const workflowRun = ctx.payload.workflow_run;
 
-export const headCommitUrl = (ctx: Context): NameUrl => ({
-  name: "Head Commit",
-  url: ctx.payload["head_commit"].url,
-});
+  if (
+    typeof workflowRun !== "object" ||
+    workflowRun === null ||
+    typeof workflowRun.html_url !== "string"
+  ) {
+    throw new Error("Could not determine workflowRunUrl");
+  }
+
+  return {
+    name: "Workflow Run",
+    url: workflowRun.html_url,
+  };
+};
+
+export const headCommitUrl = (ctx: Context): NameUrl => {
+  const headCommit = ctx.payload.head_commit;
+
+  if (
+    typeof headCommit !== "object" ||
+    headCommit === null ||
+    typeof headCommit.url !== "string"
+  ) {
+    throw new Error("Could not determine headCommitUrl");
+  }
+
+  return {
+    name: "Head Commit",
+    url: headCommit.url,
+  };
+};
 
 export const factSection = (facts: NameValue[]): AdaptiveCardFactSet => ({
   type: "FactSet",

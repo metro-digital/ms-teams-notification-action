@@ -2,7 +2,8 @@ import { EOL } from "node:os";
 
 // minimal stand-ins for the @actions/core helpers we use, avoiding the oidc/http-client/exec deps it bundles
 export const getInput = (name: string): string => {
-  const value = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] ?? "";
+  const value =
+    process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] ?? "";
   return value.trim();
 };
 
