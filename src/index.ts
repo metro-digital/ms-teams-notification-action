@@ -1,7 +1,6 @@
-import { info, setFailed, getInput } from "@actions/core";
-import { context } from "@actions/github";
-import { Context } from "@actions/github/lib/context";
-import { Config, TeamsPayload } from "./types";
+import { info, setFailed, getInput } from "./core";
+import { existsSync, readFileSync } from "node:fs";
+import { Config, GitHubContext, TeamsPayload } from "./types";
 import {
   buildTeamsPayload,
   changelogFact,
@@ -27,7 +26,7 @@ async function run(): Promise<void> {
       throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
     }
 
-    const ctx = context;
+    const ctx = getContext();
     info(`GitHub context:\n${JSON.stringify(ctx, null, 2)}`);
     const payload: TeamsPayload = await getContextPayload(ctx, config);
 
@@ -70,8 +69,28 @@ const getConfig = (): Config => {
   return result;
 };
 
+const getContext = (): GitHubContext => {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  const payload =
+    eventPath && existsSync(eventPath)
+      ? JSON.parse(readFileSync(eventPath, { encoding: "utf8" }))
+      : {};
+
+  const [owner = "", repo = ""] = (process.env.GITHUB_REPOSITORY ?? "/").split(
+    "/",
+  );
+
+  return {
+    payload,
+    eventName: process.env.GITHUB_EVENT_NAME ?? "",
+    ref: process.env.GITHUB_REF ?? "",
+    actor: process.env.GITHUB_ACTOR ?? "",
+    repo: { owner, repo },
+  };
+};
+
 const getContextPayload = async (
-  ctx: Context,
+  ctx: GitHubContext,
   config: Config,
 ): Promise<TeamsPayload> => {
   if (
@@ -79,7 +98,9 @@ const getContextPayload = async (
       ctx.eventName === "pull_request_target") &&
     (ctx.payload.action === "opened" || ctx.payload.action === "reopened")
   ) {
-    const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : "";
+    const text = ctx.payload.pull_request
+      ? (ctx.payload.pull_request.title ?? "")
+      : "";
 
     return buildTeamsPayload(
       `Pull request ${ctx.payload.action}`,

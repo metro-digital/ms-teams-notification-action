@@ -49,3 +49,25 @@ export type Config = {
   github_token: string;
   workflow_run_conclusion: ("success" | "failure")[];
 };
+
+export type WebhookPayloadRepository = {
+  [key: string]: any;
+  name: string;
+  owner: { [key: string]: any; login: string };
+  html_url?: string;
+};
+
+export type WebhookPayload = {
+  [key: string]: any;
+  repository?: WebhookPayloadRepository;
+  pull_request?: { [key: string]: any; html_url?: string; title?: string };
+  action?: string;
+};
+
+export type GitHubContext = {
+  payload: WebhookPayload;
+  eventName: string;
+  ref: string;
+  actor: string;
+  repo: { owner: string; repo: string };
+};

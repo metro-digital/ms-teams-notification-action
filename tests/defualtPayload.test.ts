@@ -269,22 +269,25 @@ describe('versionBranchMismatchFact', () => {
     expect(actual).toBeNull()
   })
 
-  test('returns null when tag sha matches triggering head sha', async () => {
+  test('returns deployed version fact when tag sha matches triggering head sha', async () => {
     mockFetch('v+2.1', mainSha)
 
     const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
 
-    expect(actual).toBeNull()
+    expect(actual).toEqual({
+      name: 'Deployed version',
+      value: 'v+2.1'
+    })
   })
 
-  test('returns warning fact when tag sha differs from triggering head sha', async () => {
+  test('returns deployed version fact with warning when tag sha differs from triggering head sha', async () => {
     mockFetch('v+2.1', tagSha)
 
     const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
 
     expect(actual).toEqual({
-      name: '⚠️ Version branch warning',
-      value: `Head commit (${mainSha}) does not match main (${tagSha}).`
+      name: 'Deployed version',
+      value: 'v+2.1 is not newest ⚠️.'
     })
   })
 })

@@ -1,13 +1,13 @@
-import { info } from "@actions/core";
+import { info } from "./core";
 import {
   AdaptiveCardAction,
   AdaptiveCardBodyItem,
   AdaptiveCardFactSet,
+  GitHubContext as Context,
   NameUrl,
   NameValue,
   TeamsPayload,
 } from "./types";
-import type { Context } from "@actions/github/lib/context";
 
 export const changelogFact = (ctx: Context): NameValue => {
   const commits = ctx.payload["commits"];
@@ -151,12 +151,15 @@ export const versionBranchMismatchFact = async (
   info(`mainSha: ${mainSha}`);
 
   if (mainSha === tagSha) {
-    return null;
+    return {
+      name: "Deployed version",
+      value: `${checkoutRef}`,
+    };
   }
 
   return {
-    name: "⚠️ Version branch warning",
-    value: `Head commit (${mainSha}) does not match main (${tagSha}).`,
+    name: "Deployed version",
+    value: `${checkoutRef} is not newest ⚠️.`,
   };
 };
 
