@@ -135,9 +135,15 @@ const getContextPayload = async (
       headCommitFact(ctx),
     ];
 
-    const mismatchFact = await deployedReleaseFact(ctx, config.github_token);
-    if (mismatchFact) {
-      facts.push(mismatchFact);
+    try {
+      const deployedFact = await deployedReleaseFact(ctx, config.github_token);
+      if (deployedFact) {
+        facts.push(deployedFact);
+      }
+    } catch (err) {
+      info(
+        `Could not determine deployed release: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
 
     return buildTeamsPayload(
