@@ -17585,12 +17585,12 @@ var require_lib = __commonJS({
             throw new Error("Client has already been disposed.");
           }
           const parsedUrl = new URL(requestUrl);
-          let info2 = this._prepareRequest(verb, parsedUrl, headers);
+          let info3 = this._prepareRequest(verb, parsedUrl, headers);
           const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
           let numTries = 0;
           let response;
           do {
-            response = yield this.requestRaw(info2, data);
+            response = yield this.requestRaw(info3, data);
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
               let authenticationHandler;
               for (const handler2 of this.handlers) {
@@ -17600,7 +17600,7 @@ var require_lib = __commonJS({
                 }
               }
               if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info2, data);
+                return authenticationHandler.handleAuthentication(this, info3, data);
               } else {
                 return response;
               }
@@ -17623,8 +17623,8 @@ var require_lib = __commonJS({
                   }
                 }
               }
-              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info2, data);
+              info3 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info3, data);
               redirectsRemaining--;
             }
             if (!response.message.statusCode || !HttpResponseRetryCodes.includes(response.message.statusCode)) {
@@ -17653,7 +17653,7 @@ var require_lib = __commonJS({
        * @param info
        * @param data
        */
-      requestRaw(info2, data) {
+      requestRaw(info3, data) {
         return __awaiter2(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
             function callbackForResult(err, res) {
@@ -17665,7 +17665,7 @@ var require_lib = __commonJS({
                 resolve(res);
               }
             }
-            this.requestRawWithCallback(info2, data, callbackForResult);
+            this.requestRawWithCallback(info3, data, callbackForResult);
           });
         });
       }
@@ -17675,12 +17675,12 @@ var require_lib = __commonJS({
        * @param data
        * @param onResult
        */
-      requestRawWithCallback(info2, data, onResult) {
+      requestRawWithCallback(info3, data, onResult) {
         if (typeof data === "string") {
-          if (!info2.options.headers) {
-            info2.options.headers = {};
+          if (!info3.options.headers) {
+            info3.options.headers = {};
           }
-          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+          info3.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
         }
         let callbackCalled = false;
         function handleResult(err, res) {
@@ -17689,7 +17689,7 @@ var require_lib = __commonJS({
             onResult(err, res);
           }
         }
-        const req = info2.httpModule.request(info2.options, (msg) => {
+        const req = info3.httpModule.request(info3.options, (msg) => {
           const res = new HttpClientResponse(msg);
           handleResult(void 0, res);
         });
@@ -17701,7 +17701,7 @@ var require_lib = __commonJS({
           if (socket) {
             socket.end();
           }
-          handleResult(new Error(`Request timeout: ${info2.options.path}`));
+          handleResult(new Error(`Request timeout: ${info3.options.path}`));
         });
         req.on("error", function(err) {
           handleResult(err);
@@ -17737,27 +17737,27 @@ var require_lib = __commonJS({
         return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
       }
       _prepareRequest(method, requestUrl, headers) {
-        const info2 = {};
-        info2.parsedUrl = requestUrl;
-        const usingSsl = info2.parsedUrl.protocol === "https:";
-        info2.httpModule = usingSsl ? https : http;
+        const info3 = {};
+        info3.parsedUrl = requestUrl;
+        const usingSsl = info3.parsedUrl.protocol === "https:";
+        info3.httpModule = usingSsl ? https : http;
         const defaultPort = usingSsl ? 443 : 80;
-        info2.options = {};
-        info2.options.host = info2.parsedUrl.hostname;
-        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
-        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
-        info2.options.method = method;
-        info2.options.headers = this._mergeHeaders(headers);
+        info3.options = {};
+        info3.options.host = info3.parsedUrl.hostname;
+        info3.options.port = info3.parsedUrl.port ? parseInt(info3.parsedUrl.port) : defaultPort;
+        info3.options.path = (info3.parsedUrl.pathname || "") + (info3.parsedUrl.search || "");
+        info3.options.method = method;
+        info3.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-          info2.options.headers["user-agent"] = this.userAgent;
+          info3.options.headers["user-agent"] = this.userAgent;
         }
-        info2.options.agent = this._getAgent(info2.parsedUrl);
+        info3.options.agent = this._getAgent(info3.parsedUrl);
         if (this.handlers) {
           for (const handler2 of this.handlers) {
-            handler2.prepareRequest(info2.options);
+            handler2.prepareRequest(info3.options);
           }
         }
-        return info2;
+        return info3;
       }
       _mergeHeaders(headers) {
         if (this.requestOptions && this.requestOptions.headers) {
@@ -19747,10 +19747,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issueCommand)("notice", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
     exports2.notice = notice;
-    function info2(message) {
+    function info3(message) {
       process.stdout.write(message + os.EOL);
     }
-    exports2.info = info2;
+    exports2.info = info3;
     function startGroup(name) {
       (0, command_1.issue)("group", name);
     }
@@ -38894,12 +38894,12 @@ var require_lib2 = __commonJS({
             throw new Error("Client has already been disposed.");
           }
           const parsedUrl = new URL(requestUrl);
-          let info2 = this._prepareRequest(verb, parsedUrl, headers);
+          let info3 = this._prepareRequest(verb, parsedUrl, headers);
           const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
           let numTries = 0;
           let response;
           do {
-            response = yield this.requestRaw(info2, data);
+            response = yield this.requestRaw(info3, data);
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
               let authenticationHandler;
               for (const handler2 of this.handlers) {
@@ -38909,7 +38909,7 @@ var require_lib2 = __commonJS({
                 }
               }
               if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info2, data);
+                return authenticationHandler.handleAuthentication(this, info3, data);
               } else {
                 return response;
               }
@@ -38932,8 +38932,8 @@ var require_lib2 = __commonJS({
                   }
                 }
               }
-              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info2, data);
+              info3 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info3, data);
               redirectsRemaining--;
             }
             if (!response.message.statusCode || !HttpResponseRetryCodes.includes(response.message.statusCode)) {
@@ -38962,7 +38962,7 @@ var require_lib2 = __commonJS({
        * @param info
        * @param data
        */
-      requestRaw(info2, data) {
+      requestRaw(info3, data) {
         return __awaiter2(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
             function callbackForResult(err, res) {
@@ -38974,7 +38974,7 @@ var require_lib2 = __commonJS({
                 resolve(res);
               }
             }
-            this.requestRawWithCallback(info2, data, callbackForResult);
+            this.requestRawWithCallback(info3, data, callbackForResult);
           });
         });
       }
@@ -38984,12 +38984,12 @@ var require_lib2 = __commonJS({
        * @param data
        * @param onResult
        */
-      requestRawWithCallback(info2, data, onResult) {
+      requestRawWithCallback(info3, data, onResult) {
         if (typeof data === "string") {
-          if (!info2.options.headers) {
-            info2.options.headers = {};
+          if (!info3.options.headers) {
+            info3.options.headers = {};
           }
-          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+          info3.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
         }
         let callbackCalled = false;
         function handleResult(err, res) {
@@ -38998,7 +38998,7 @@ var require_lib2 = __commonJS({
             onResult(err, res);
           }
         }
-        const req = info2.httpModule.request(info2.options, (msg) => {
+        const req = info3.httpModule.request(info3.options, (msg) => {
           const res = new HttpClientResponse(msg);
           handleResult(void 0, res);
         });
@@ -39010,7 +39010,7 @@ var require_lib2 = __commonJS({
           if (socket) {
             socket.end();
           }
-          handleResult(new Error(`Request timeout: ${info2.options.path}`));
+          handleResult(new Error(`Request timeout: ${info3.options.path}`));
         });
         req.on("error", function(err) {
           handleResult(err);
@@ -39046,27 +39046,27 @@ var require_lib2 = __commonJS({
         return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
       }
       _prepareRequest(method, requestUrl, headers) {
-        const info2 = {};
-        info2.parsedUrl = requestUrl;
-        const usingSsl = info2.parsedUrl.protocol === "https:";
-        info2.httpModule = usingSsl ? https : http;
+        const info3 = {};
+        info3.parsedUrl = requestUrl;
+        const usingSsl = info3.parsedUrl.protocol === "https:";
+        info3.httpModule = usingSsl ? https : http;
         const defaultPort = usingSsl ? 443 : 80;
-        info2.options = {};
-        info2.options.host = info2.parsedUrl.hostname;
-        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
-        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
-        info2.options.method = method;
-        info2.options.headers = this._mergeHeaders(headers);
+        info3.options = {};
+        info3.options.host = info3.parsedUrl.hostname;
+        info3.options.port = info3.parsedUrl.port ? parseInt(info3.parsedUrl.port) : defaultPort;
+        info3.options.path = (info3.parsedUrl.pathname || "") + (info3.parsedUrl.search || "");
+        info3.options.method = method;
+        info3.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-          info2.options.headers["user-agent"] = this.userAgent;
+          info3.options.headers["user-agent"] = this.userAgent;
         }
-        info2.options.agent = this._getAgent(info2.parsedUrl);
+        info3.options.agent = this._getAgent(info3.parsedUrl);
         if (this.handlers) {
           for (const handler2 of this.handlers) {
-            handler2.prepareRequest(info2.options);
+            handler2.prepareRequest(info3.options);
           }
         }
-        return info2;
+        return info3;
       }
       _mergeHeaders(headers) {
         if (this.requestOptions && this.requestOptions.headers) {
@@ -39279,7 +39279,7 @@ var require_lib2 = __commonJS({
 });
 
 // src/index.ts
-var import_core2 = __toESM(require_core());
+var import_core3 = __toESM(require_core());
 
 // node_modules/@actions/github/lib/context.js
 var import_fs = require("fs");
@@ -43410,6 +43410,7 @@ var GitHub = Octokit.plugin(restEndpointMethods, paginateRest).defaults(defaults
 var context2 = new Context();
 
 // src/utils.ts
+var import_core2 = __toESM(require_core());
 var changelogFact = (ctx) => {
   const commits = ctx.payload["commits"];
   if (commits && commits.length > 1) {
@@ -43442,12 +43443,31 @@ var headCommitFact = (ctx) => ({
   name: "Head commit",
   value: ctx.payload["workflow_run"].head_commit.message
 });
-var isVersionBranch = (branch) => branch.startsWith("v");
-var getMainBranchHeadSha = async (ctx, token) => {
+var isVersionBranch = (branch) => branch.startsWith("v+");
+var getFirstWorkflowRunJobId = async (jobsUrl, token) => {
+  const response = await fetch(jobsUrl, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch workflow run jobs.
+Status: ${response.status}`
+    );
+  }
+  const data = await response.json();
+  const [firstJob] = data.jobs;
+  if (!firstJob) {
+    throw new Error("Workflow run has no jobs.");
+  }
+  return firstJob.id;
+};
+var getJobLogs = async (ctx, jobId, token) => {
   const { owner, repo } = ctx.repo;
-  const defaultBranch = typeof ctx.payload.repository?.default_branch === "string" ? ctx.payload.repository.default_branch : "master";
   const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/branches/${defaultBranch}`,
+    `https://api.github.com/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
     {
       headers: {
         Accept: "application/vnd.github+json",
@@ -43456,27 +43476,50 @@ var getMainBranchHeadSha = async (ctx, token) => {
     }
   );
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch default branch info.
-Status: ${response.status}`
-    );
+    throw new Error(`Failed to fetch job logs.
+Status: ${response.status}`);
   }
-  const data = await response.json();
-  return data.commit.sha;
+  return response.text();
 };
-var versionBranchMismatchFact = async (ctx, token) => {
-  const headBranch = ctx.payload["workflow_run"].head_branch;
-  const headSha = ctx.payload["workflow_run"].head_sha;
-  if (!isVersionBranch(headBranch)) {
+var extractCheckoutRef = (logs) => {
+  const checkoutStep = logs.match(
+    /##\[group\]Run actions\/checkout[^\n]*\n([\s\S]*?)##\[endgroup\]/
+  );
+  if (!checkoutStep) {
     return null;
   }
-  const mainSha = await getMainBranchHeadSha(ctx, token);
-  if (mainSha === headSha) {
+  const refMatch = checkoutStep[1].match(/\bref:\s*(\S+)/);
+  return refMatch ? refMatch[1] : null;
+};
+var extractHeadSha = (logs) => {
+  const commandMatch = logs.match(/git log -1 --format=%H\s*\n([^\n]*)/);
+  if (!commandMatch) {
+    return null;
+  }
+  const shaMatch = commandMatch[1].match(/([0-9a-f]{40})/);
+  return shaMatch ? shaMatch[1] : null;
+};
+var versionBranchMismatchFact = async (ctx, token) => {
+  if (ctx.eventName !== "workflow_run") {
+    return null;
+  }
+  const jobsUrl = ctx.payload["workflow_run"].jobs_url;
+  const jobId = await getFirstWorkflowRunJobId(jobsUrl, token);
+  const logs = await getJobLogs(ctx, jobId, token);
+  const checkoutRef = extractCheckoutRef(logs);
+  const tagSha = extractHeadSha(logs);
+  (0, import_core2.info)(`checkoutRef: ${checkoutRef}, tagSha: ${tagSha}`);
+  if (!checkoutRef || !tagSha || !isVersionBranch(checkoutRef)) {
+    return null;
+  }
+  const mainSha = ctx.payload["workflow_run"].head_sha;
+  (0, import_core2.info)(`mainSha: ${mainSha}`);
+  if (mainSha === tagSha) {
     return null;
   }
   return {
     name: "\u26A0\uFE0F Version branch warning",
-    value: `Head commit (${headSha}) does not match main (${mainSha}).`
+    value: `Head commit (${mainSha}) does not match main (${tagSha}).`
   };
 };
 var repoUrl = (ctx) => {
@@ -43571,7 +43614,7 @@ async function run() {
       throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
     }
     const ctx = context2;
-    (0, import_core2.info)(`GitHub context:
+    (0, import_core3.info)(`GitHub context:
 ${JSON.stringify(ctx, null, 2)}`);
     const payload = await getContextPayload(ctx, config);
     const response = await fetch(config.webhook_url, {
@@ -43582,7 +43625,7 @@ ${JSON.stringify(ctx, null, 2)}`);
     });
     if (!response.ok) {
       const body = await response.text();
-      (0, import_core2.info)(JSON.stringify(payload, null, 2));
+      (0, import_core3.info)(JSON.stringify(payload, null, 2));
       throw new Error(
         `Failed to send notification to Microsoft Teams.
 Status: ${response.status}
@@ -43590,19 +43633,19 @@ Response: ${body}`
       );
     }
   } catch (err) {
-    if (err instanceof Error) (0, import_core2.setFailed)(err.message);
+    if (err instanceof Error) (0, import_core3.setFailed)(err.message);
   }
 }
 var getConfig = () => {
   const result = {
-    webhook_url: (0, import_core2.getInput)("webhook_url"),
-    github_token: (0, import_core2.getInput)("github_token"),
+    webhook_url: (0, import_core3.getInput)("webhook_url"),
+    github_token: (0, import_core3.getInput)("github_token"),
     workflow_run_conclusion: []
   };
-  if ([false, "false"].includes((0, import_core2.getInput)("workflow_run_success")) ? false : true) {
+  if ([false, "false"].includes((0, import_core3.getInput)("workflow_run_success")) ? false : true) {
     result.workflow_run_conclusion.push("success");
   }
-  if ([false, "false"].includes((0, import_core2.getInput)("workflow_run_failure")) ? false : true) {
+  if ([false, "false"].includes((0, import_core3.getInput)("workflow_run_failure")) ? false : true) {
     result.workflow_run_conclusion.push("failure");
   }
   return result;
@@ -43650,7 +43693,7 @@ var getContextPayload = async (ctx, config) => {
       conclusion === "failure" ? "Attention" : "Good"
     );
   }
-  (0, import_core2.info)(JSON.stringify(ctx, null, 2));
+  (0, import_core3.info)(JSON.stringify(ctx, null, 2));
   return defaultPayload(ctx);
 };
 run();

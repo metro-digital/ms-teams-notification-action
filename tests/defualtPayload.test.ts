@@ -209,64 +209,82 @@ describe('defaultPayload', () => {
 })
 
 describe('versionBranchMismatchFact', () => {
-  const makeCtx = (branch = 'v1.2.3', headSha = 'branch-sha') => ({
+  const jobsUrl = 'https://api.github.com/repos/dummy_owner/dummy_repo/actions/runs/1/jobs'
+  const jobLogs = (ref: string, sha: string) => [
+    '##[group]Run actions/checkout@v7',
+    'with:',
+    `  ref: ${ref}`,
+    '##[endgroup]',
+    '[command]/usr/bin/git log -1 --format=%H',
+    sha,
+  ].join('\n')
+
+  const makeCtx = (eventName = 'workflow_run', headSha = 'a9d5bb9cd3338c0c23f7cc4c8daee8203ced275e') => ({
+    eventName,
     repo: {
       owner: 'dummy_owner',
       repo: 'dummy_repo'
     },
     payload: {
       workflow_run: {
-        head_branch: branch,
+        jobs_url: jobsUrl,
         head_sha: headSha
       }
     }
   }) as any
 
+  const mockFetch = (ref: string, sha: string) => {
+    jest.spyOn(globalThis, 'fetch' as any).mockImplementation((url: any) => {
+      if (url === jobsUrl) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ jobs: [{ id: 1 }] })
+        } as any)
+      }
+      return Promise.resolve({
+        ok: true,
+        text: async () => jobLogs(ref, sha)
+      } as any)
+    })
+  }
+
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  test('returns null when branch does not start with v', async () => {
-    const ctx = makeCtx('main', 'branch-sha')
-
-    const actual = await versionBranchMismatchFact(ctx, 'test-token')
+  test('returns null when event is not workflow_run', async () => {
+    const actual = await versionBranchMismatchFact(makeCtx('push'), 'test-token')
 
     expect(actual).toBeNull()
   })
 
-  test('returns null when head sha matches default branch', async () => {
-    const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ commit: { sha: 'branch-sha' }})
-    } as any)
+  const tagSha = '31bff7c2faa15f730e9cc5a1e63beab5c05f2dc1'
+  const mainSha = 'a9d5bb9cd3338c0c23f7cc4c8daee8203ced275e'
 
-    const ctx = makeCtx('v1.2.3', 'branch-sha')
-    ctx.payload.repository = { default_branch: 'develop' }
+  test('returns null when checked-out ref does not start with v+', async () => {
+    mockFetch('main', tagSha)
 
-    const actual = await versionBranchMismatchFact(ctx, 'test-token')
+    const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
 
     expect(actual).toBeNull()
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.github.com/repos/dummy_owner/dummy_repo/branches/develop',
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: 'Bearer test-token'
-        })
-      })
-    )
   })
 
-  test('returns warning fact when head sha differs from default branch', async () => {
-    jest.spyOn(globalThis, 'fetch' as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ commit: { sha: 'main-sha' }})
-    } as any)
+  test('returns null when tag sha matches triggering head sha', async () => {
+    mockFetch('v+2.1', mainSha)
 
-    const actual = await versionBranchMismatchFact(makeCtx('v1.2.3', 'branch-sha'), 'test-token')
+    const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
+
+    expect(actual).toBeNull()
+  })
+
+  test('returns warning fact when tag sha differs from triggering head sha', async () => {
+    mockFetch('v+2.1', tagSha)
+
+    const actual = await versionBranchMismatchFact(makeCtx('workflow_run', mainSha), 'test-token')
 
     expect(actual).toEqual({
       name: '⚠️ Version branch warning',
-      value: 'Head commit (branch-sha) does not match main (main-sha).'
+      value: `Head commit (${mainSha}) does not match main (${tagSha}).`
     })
   })
 })

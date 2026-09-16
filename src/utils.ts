@@ -1,3 +1,4 @@
+import { info } from "@actions/core";
 import {
   AdaptiveCardAction,
   AdaptiveCardBodyItem,
@@ -50,20 +51,42 @@ export const headCommitFact = (ctx: Context): NameValue => ({
 });
 
 export const isVersionBranch = (branch: string): boolean =>
-  branch.startsWith("v");
+  branch.startsWith("v+");
 
-const getMainBranchHeadSha = async (
+const getFirstWorkflowRunJobId = async (
+  jobsUrl: string,
+  token: string,
+): Promise<number> => {
+  const response = await fetch(jobsUrl, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch workflow run jobs.\nStatus: ${response.status}`,
+    );
+  }
+
+  const data = (await response.json()) as { jobs: { id: number }[] };
+  const [firstJob] = data.jobs;
+  if (!firstJob) {
+    throw new Error("Workflow run has no jobs.");
+  }
+
+  return firstJob.id;
+};
+
+const getJobLogs = async (
   ctx: Context,
+  jobId: number,
   token: string,
 ): Promise<string> => {
   const { owner, repo } = ctx.repo;
-  const defaultBranch =
-    typeof ctx.payload.repository?.default_branch === "string"
-      ? ctx.payload.repository.default_branch
-      : "master";
-
   const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/branches/${defaultBranch}`,
+    `https://api.github.com/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
     {
       headers: {
         Accept: "application/vnd.github+json",
@@ -73,34 +96,67 @@ const getMainBranchHeadSha = async (
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch default branch info.\nStatus: ${response.status}`,
-    );
+    throw new Error(`Failed to fetch job logs.\nStatus: ${response.status}`);
   }
 
-  const data = (await response.json()) as { commit: { sha: string } };
-  return data.commit.sha;
+  return response.text();
+};
+
+// the actual checked-out ref is only known from the checkout step logs, not the workflow_run payload
+const extractCheckoutRef = (logs: string): string | null => {
+  const checkoutStep = logs.match(
+    /##\[group\]Run actions\/checkout[^\n]*\n([\s\S]*?)##\[endgroup\]/,
+  );
+  if (!checkoutStep) {
+    return null;
+  }
+
+  const refMatch = checkoutStep[1].match(/\bref:\s*(\S+)/);
+  return refMatch ? refMatch[1] : null;
+};
+
+// the actual checked-out commit is only known from the "git log -1" step output, not head_sha
+const extractHeadSha = (logs: string): string | null => {
+  const commandMatch = logs.match(/git log -1 --format=%H\s*\n([^\n]*)/);
+  if (!commandMatch) {
+    return null;
+  }
+
+  const shaMatch = commandMatch[1].match(/([0-9a-f]{40})/);
+  return shaMatch ? shaMatch[1] : null;
 };
 
 export const versionBranchMismatchFact = async (
   ctx: Context,
   token: string,
 ): Promise<NameValue | null> => {
-  const headBranch = ctx.payload["workflow_run"].head_branch;
-  const headSha = ctx.payload["workflow_run"].head_sha;
-
-  if (!isVersionBranch(headBranch)) {
+  if (ctx.eventName !== "workflow_run") {
     return null;
   }
 
-  const mainSha = await getMainBranchHeadSha(ctx, token);
-  if (mainSha === headSha) {
+  const jobsUrl = ctx.payload["workflow_run"].jobs_url;
+  const jobId = await getFirstWorkflowRunJobId(jobsUrl, token);
+  const logs = await getJobLogs(ctx, jobId, token);
+
+  const checkoutRef = extractCheckoutRef(logs);
+  const tagSha = extractHeadSha(logs);
+
+  info(`checkoutRef: ${checkoutRef}, tagSha: ${tagSha}`);
+
+  if (!checkoutRef || !tagSha || !isVersionBranch(checkoutRef)) {
+    return null;
+  }
+
+  const mainSha = ctx.payload["workflow_run"].head_sha;
+  info(`mainSha: ${mainSha}`);
+
+  if (mainSha === tagSha) {
     return null;
   }
 
   return {
     name: "⚠️ Version branch warning",
-    value: `Head commit (${headSha}) does not match main (${mainSha}).`,
+    value: `Head commit (${mainSha}) does not match main (${tagSha}).`,
   };
 };
 
