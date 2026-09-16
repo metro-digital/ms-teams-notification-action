@@ -1,4 +1,4 @@
-import { info, setFailed, getInput } from "@actions/core";
+import { debug, info, setFailed, getInput } from "@actions/core";
 import { context } from "@actions/github";
 import { Context } from "@actions/github/lib/context";
 import { Config, TeamsPayload } from "./types";
@@ -28,6 +28,7 @@ async function run(): Promise<void> {
     }
 
     const ctx = context;
+    debug(`GitHub context:\n${JSON.stringify(ctx, null, 2)}`);
     const payload: TeamsPayload = await getContextPayload(ctx, config);
 
     const response = await fetch(config.webhook_url, {

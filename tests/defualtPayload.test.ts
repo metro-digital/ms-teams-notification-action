@@ -234,17 +234,20 @@ describe('versionBranchMismatchFact', () => {
     expect(actual).toBeNull()
   })
 
-  test('returns null when head sha matches main', async () => {
+  test('returns null when head sha matches default branch', async () => {
     const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockResolvedValue({
       ok: true,
       json: async () => ({ commit: { sha: 'branch-sha' }})
     } as any)
 
-    const actual = await versionBranchMismatchFact(makeCtx('v1.2.3', 'branch-sha'), 'test-token')
+    const ctx = makeCtx('v1.2.3', 'branch-sha')
+    ctx.payload.repository = { default_branch: 'develop' }
+
+    const actual = await versionBranchMismatchFact(ctx, 'test-token')
 
     expect(actual).toBeNull()
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.github.com/repos/dummy_owner/dummy_repo/branches/main',
+      'https://api.github.com/repos/dummy_owner/dummy_repo/branches/develop',
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer test-token'
@@ -253,7 +256,7 @@ describe('versionBranchMismatchFact', () => {
     )
   })
 
-  test('returns warning fact when head sha differs from main', async () => {
+  test('returns warning fact when head sha differs from default branch', async () => {
     jest.spyOn(globalThis, 'fetch' as any).mockResolvedValue({
       ok: true,
       json: async () => ({ commit: { sha: 'main-sha' }})

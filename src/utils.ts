@@ -57,8 +57,13 @@ const getMainBranchHeadSha = async (
   token: string,
 ): Promise<string> => {
   const { owner, repo } = ctx.repo;
+  const defaultBranch =
+    typeof ctx.payload.repository?.default_branch === "string"
+      ? ctx.payload.repository.default_branch
+      : "master";
+
   const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/branches/main`,
+    `https://api.github.com/repos/${owner}/${repo}/branches/${defaultBranch}`,
     {
       headers: {
         Accept: "application/vnd.github+json",
@@ -69,7 +74,7 @@ const getMainBranchHeadSha = async (
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch main branch info.\nStatus: ${response.status}`,
+      `Failed to fetch default branch info.\nStatus: ${response.status}`,
     );
   }
 
