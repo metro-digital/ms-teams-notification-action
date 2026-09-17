@@ -1,7 +1,6 @@
-import { info, setFailed, getInput } from "@actions/core";
-import { context } from "@actions/github";
-import { Context } from "@actions/github/lib/context";
-import { Config, TeamsPayload } from "./types";
+import { info, setFailed, getInput } from "./core";
+import { existsSync, readFileSync } from "node:fs";
+import { Config, GitHubContext, TeamsPayload } from "./types";
 import {
   buildTeamsPayload,
   changelogFact,
@@ -14,6 +13,7 @@ import {
   repositoryFact,
   senderFact,
   urlActions,
+  deployedReleaseFact,
   workflowNameFact,
   workflowRunUrl,
 } from "./utils";
@@ -26,8 +26,8 @@ async function run(): Promise<void> {
       throw new Error("[Error] Missing Microsoft Teams Incoming Webhooks URL.");
     }
 
-    const ctx = context;
-    const payload: TeamsPayload = getContextPayload(ctx, config);
+    const ctx = getContext();
+    const payload: TeamsPayload = await getContextPayload(ctx, config);
 
     const response = await fetch(config.webhook_url, {
       body: JSON.stringify(payload),
@@ -51,6 +51,7 @@ async function run(): Promise<void> {
 const getConfig = (): Config => {
   const result: Config = {
     webhook_url: getInput("webhook_url"),
+    github_token: getInput("github_token"),
     workflow_run_conclusion: [],
   };
 
@@ -67,13 +68,38 @@ const getConfig = (): Config => {
   return result;
 };
 
-const getContextPayload = (ctx: Context, config: Config): TeamsPayload => {
+const getContext = (): GitHubContext => {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  const payload =
+    eventPath && existsSync(eventPath)
+      ? JSON.parse(readFileSync(eventPath, { encoding: "utf8" }))
+      : {};
+
+  const [owner = "", repo = ""] = (process.env.GITHUB_REPOSITORY ?? "/").split(
+    "/",
+  );
+
+  return {
+    payload,
+    eventName: process.env.GITHUB_EVENT_NAME ?? "",
+    ref: process.env.GITHUB_REF ?? "",
+    actor: process.env.GITHUB_ACTOR ?? "",
+    repo: { owner, repo },
+  };
+};
+
+const getContextPayload = async (
+  ctx: GitHubContext,
+  config: Config,
+): Promise<TeamsPayload> => {
   if (
     (ctx.eventName === "pull_request" ||
       ctx.eventName === "pull_request_target") &&
     (ctx.payload.action === "opened" || ctx.payload.action === "reopened")
   ) {
-    const text = ctx.payload.pull_request ? ctx.payload.pull_request.title : "";
+    const text = ctx.payload.pull_request
+      ? (ctx.payload.pull_request.title ?? "")
+      : "";
 
     return buildTeamsPayload(
       `Pull request ${ctx.payload.action}`,
@@ -93,23 +119,36 @@ const getContextPayload = (ctx: Context, config: Config): TeamsPayload => {
     );
   }
 
+  const workflowRun = ctx.payload.workflow_run;
+
   if (
     ctx.eventName === "workflow_run" &&
-    config.workflow_run_conclusion.includes(
-      ctx.payload["workflow_run"].conclusion,
-    )
+    workflowRun &&
+    workflowRun.conclusion &&
+    config.workflow_run_conclusion.includes(workflowRun.conclusion)
   ) {
-    const conclusion = ctx.payload["workflow_run"].conclusion;
+    const conclusion = workflowRun.conclusion;
+    const facts = [
+      senderFact(ctx),
+      repositoryFact(ctx),
+      workflowNameFact(ctx),
+      headCommitFact(ctx),
+    ];
+
+    try {
+      const deployedFact = await deployedReleaseFact(ctx, config.github_token);
+      if (deployedFact) {
+        facts.push(deployedFact);
+      }
+    } catch (err) {
+      info(
+        `Could not determine deployed release: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
     return buildTeamsPayload(
       `Workflow ${conclusion}`,
-      [
-        factSection([
-          senderFact(ctx),
-          repositoryFact(ctx),
-          workflowNameFact(ctx),
-          headCommitFact(ctx),
-        ]),
-      ],
+      [factSection(facts)],
       urlActions([repoUrl(ctx), workflowRunUrl(ctx)]),
       conclusion === "failure" ? "Attention" : "Good",
     );
